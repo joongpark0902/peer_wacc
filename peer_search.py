@@ -110,7 +110,8 @@ def rank(rows, top=RECOMMEND_TOP, target_cap_eok=None):
 def refine(ranked, fin_map, *, target_sales_eok=None, top=RECOMMEND_TOP, target_cap_eok=None):
     """[정밀 추천] 재점수 — DART 경량 조회(fin_map: {code: {sales, op_income, audit_opinion, total_liab, total_equity}}).
     매출 대상 대비 0.1x~10x +2 · 영업이익 흑자 +1 / 적자 −1 · 감사의견 비적정 하드 제외(−100, 사용자 확정 예외)
-    · 부채/자본 > 5x 또는 자본총계 ≤ 0(자본잠식) −3. 조회 안 된 행은 원점수 유지."""
+    · 부채/자본 > 5x 또는 자본총계 ≤ 0(자본잠식) −3. 조회 안 된 행은 원점수 유지.
+    동점은 매출 유사도 거리 |log(후보/대상 매출)| 우선(비상장 대상은 시총이 없어 매출이 유일한 규모 축) → 시총 거리 → 상장 경과."""
     out = []
     for r in ranked:
         r = dict(r)
@@ -147,7 +148,14 @@ def refine(ranked, fin_map, *, target_sales_eok=None, top=RECOMMEND_TOP, target_
         else:
             r["score"] = r.get("score", score(r))
         out.append(r)
-    out.sort(key=lambda r: (-(r.get("score") or 0), _cap_dist(r, target_cap_eok), r.get("listed") or "9999-99-99"))
+    def _sales_dist(r):
+        sales = (r.get("fin") or {}).get("sales")
+        if not target_sales_eok or not sales:
+            return 1e9
+        return abs(math.log(sales / (target_sales_eok * 1e8)))
+
+    out.sort(key=lambda r: (-(r.get("score") or 0), _sales_dist(r), _cap_dist(r, target_cap_eok),
+                            r.get("listed") or "9999-99-99"))
     for k, r in enumerate(out):
         r["recommended"] = k < top and (r.get("score") or 0) > 0
     return out

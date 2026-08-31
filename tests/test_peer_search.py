@@ -175,6 +175,14 @@ class RefineTest(unittest.TestCase):
         self.assertIn("매출유사+2", by["갑"]["reason"]); self.assertIn("흑자+1", by["갑"]["reason"])
         self.assertIn("적자−1", by["병"]["reason"]); self.assertIn("D/E>5x−3", by["정"]["reason"])
 
+    def test_refine_tiebreak_by_sales_distance(self):
+        """동점이면 대상 매출에 가까운 순 — 비상장 대상은 시총이 없어 매출이 유일한 규모 축(사용자 확정)."""
+        fin = {"A": {"sales": 900e8, "op_income": None, "audit_opinion": None, "total_liab": None, "total_equity": None},
+               "B": {"sales": 120e8, "op_income": None, "audit_opinion": None, "total_liab": None, "total_equity": None}}
+        out = ps.refine(self._ranked(), fin, target_sales_eok=100)
+        self.assertEqual([r["name"] for r in out[:2]], ["을", "갑"])       # 둘 다 +2 동점 → 120억(1.2x)이 900억(9x)보다 먼저
+        self.assertEqual([r["name"] for r in out[2:]], ["병", "정"])       # 매출 미조회는 뒤로(원점수 동일, 목록순)
+
     def test_refine_impaired_equity_and_missing_fin(self):
         fin = {"A": {"sales": None, "op_income": None, "audit_opinion": None, "total_liab": 100e8, "total_equity": -5e8}}
         out = ps.refine(self._ranked(), fin, target_sales_eok=None)
