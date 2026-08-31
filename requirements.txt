@@ -1,0 +1,4 @@
+requests>=2.31
+customtkinter>=5.2
+pykrx>=1.2.8
+openpyxl>=3.1

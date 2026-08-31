@@ -1,0 +1,14 @@
+{"status": "000", "message": "정상", "list": [
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_CurrentLoansReceived", "account_nm": "단기차입금", "thstrm_amount": "2,000,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "dart_CurrentPortionOfLongTermBorrowings", "account_nm": "유동성장기부채", "thstrm_amount": "500,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_NoncurrentLoansReceived", "account_nm": "장기차입금", "thstrm_amount": "1,500,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "dart_BondsIssued", "account_nm": "사채", "thstrm_amount": "3,000,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_CurrentLeaseLiabilities", "account_nm": "리스부채", "thstrm_amount": "120,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_NoncurrentLeaseLiabilities", "account_nm": "리스부채", "thstrm_amount": "380,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_OtherNoncurrentFinancialLiabilities", "account_nm": "기타금융부채", "thstrm_amount": "839,800,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_TradeAndOtherCurrentPayables", "account_nm": "매입채무및기타채무", "thstrm_amount": "9,000,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_Liabilities", "account_nm": "부채총계", "thstrm_amount": "40,770,818,528"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_NoncontrollingInterests", "account_nm": "비지배지분", "thstrm_amount": "250,000,000"},
+ {"rcept_no": "20260317000001", "sj_div": "BS", "account_id": "ifrs-full_Equity", "account_nm": "자본총계", "thstrm_amount": "549,501,000,618"},
+ {"rcept_no": "20260317000001", "sj_div": "IS", "account_id": "ifrs-full_Revenue", "account_nm": "매출액", "thstrm_amount": "100"}
+]}

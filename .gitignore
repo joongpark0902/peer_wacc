@@ -1,0 +1,11 @@
+config.txt
+cache/
+peer_sessions/
+downloads/
+dist/
+build/
+__pycache__/
+*.pyc
+*.xlsx
+!tests/fixtures/*.xlsx
+docs/superpowers/
