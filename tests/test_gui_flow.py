@@ -176,6 +176,25 @@ class GuiFlowTest(unittest.TestCase):
                 self.assertEqual(a.peers_loaded[0]["status"], "ok")
                 sp.src_seg.set("산출(KRX)"); sp._on_source("산출(KRX)"); a.update()
                 self.assertIn("βU 평균", sp.agg_label.cget("text"))
+                # [정밀 추천]: DART 경량 조회로 재점수 — 흑자·매출유사 가점, 비적정 하드 제외
+                cp.target_sales_var.set("100")
+                a.fetchers = dict(a.fetchers,
+                                  brief=lambda cc, y: {"sales": 500e8, "op_income": (10e8 if cc == "A" else -10e8),
+                                                       "total_liab": 100e8, "total_equity": 100e8},
+                                  audit=lambda cc, y: ("적정의견" if cc == "A" else "한정"))
+                class _SyncThread0:
+                    def __init__(self, target=None, args=(), daemon=None, **k): self._t = lambda: target(*args)
+                    def start(self): self._t()
+                # threading.Thread 전역 패치는 진짜 ThreadPoolExecutor 의 워커 생성까지 막아 큐 대기에 빠진다
+                # → 풀도 동기 스텁으로 함께 패치
+                with mock.patch.object(candidate_panel, "ThreadPoolExecutor", _SyncPool), \
+                     mock.patch.object(candidate_panel.threading, "Thread", _SyncThread0):
+                    cp.precise_recommend()
+                a.update()
+                by = {r["name"]: r for r in a.candidates}
+                self.assertEqual(a.candidates[0]["name"], "성광벤드")
+                self.assertIn("흑자+1", by["성광벤드"]["reason"]); self.assertIn("매출유사+2", by["성광벤드"]["reason"])
+                self.assertIn("감사의견:한정", by["태광"]["flags"]); self.assertFalse(by["태광"]["recommended"])
                 class _SyncThread:                        # 보고서 생성 스레드를 동기 실행
                     def __init__(self, target=None, daemon=None, **k): self._t = target
                     def start(self): self._t()

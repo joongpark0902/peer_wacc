@@ -49,6 +49,7 @@ def default_fetchers(api_key):
         "pretax": lambda cc, y: di.fetch_pretax(api_key, cc, y),
         "audit": lambda cc, y: di.fetch_audit_opinion(api_key, cc, y),
         "opinc": lambda cc, y: di.fetch_operating_income(api_key, cc, y),
+        "brief": lambda cc, y: di.fetch_brief(api_key, cc, y),
     }
 
 

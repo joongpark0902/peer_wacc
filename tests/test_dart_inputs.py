@@ -26,6 +26,31 @@ class ReportCandidatesTest(unittest.TestCase):
         self.assertEqual(di.report_candidates("2026-08-28")[:2], [(2026, "11012"), (2026, "11013")])
 
 
+class ParseBriefTest(unittest.TestCase):
+    """정밀 추천용 경량 파서: fnlttSinglAcntAll 한 응답에서 매출액·영업이익·부채총계·자본총계."""
+
+    def test_parse_brief_from_full_statement(self):
+        js = {"status": "000", "list": [
+            {"sj_div": "BS", "account_nm": "매출채권", "thstrm_amount": "9,999"},
+            {"sj_div": "BS", "account_nm": "부채총계", "thstrm_amount": "1,000"},
+            {"sj_div": "BS", "account_nm": "자본총계", "thstrm_amount": "500"},
+            {"sj_div": "IS", "account_nm": "I. 매출액", "thstrm_amount": "2,000"},
+            {"sj_div": "IS", "account_nm": "영업이익", "thstrm_amount": "300"},
+        ]}
+        b = di.parse_brief(js)
+        self.assertEqual((b["sales"], b["op_income"], b["total_liab"], b["total_equity"]), (2000, 300, 1000, 500))
+
+    def test_parse_brief_cis_revenue_and_missing(self):
+        js = {"status": "000", "list": [
+            {"sj_div": "CIS", "account_nm": "수익(매출액)", "thstrm_amount": "700"},
+            {"sj_div": "CIS", "account_nm": "영업손실", "thstrm_amount": "-50"},
+        ]}
+        b = di.parse_brief(js)
+        self.assertEqual(b["sales"], 700)
+        self.assertEqual(b["op_income"], -50)
+        self.assertIsNone(b["total_equity"])
+
+
 class ParseBsTest(unittest.TestCase):
     def setUp(self):
         self.r = di.parse_bs(_js("dart_bs_sample.json"))

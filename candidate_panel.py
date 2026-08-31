@@ -3,6 +3,7 @@ import datetime as dt
 import os
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
@@ -188,6 +189,9 @@ class CandidatePanel:
         ctk.CTkLabel(k, text="대상 시총(억, 선택)").grid(row=0, column=2, padx=(12, 0))
         self.target_cap_var = tk.StringVar()
         ctk.CTkEntry(k, textvariable=self.target_cap_var, width=90, placeholder_text="0.2x~5x +2").grid(row=0, column=3, padx=6)
+        ctk.CTkLabel(k, text="대상 매출(억, 선택)").grid(row=0, column=4, padx=(12, 0))
+        self.target_sales_var = tk.StringVar()
+        ctk.CTkEntry(k, textvariable=self.target_sales_var, width=90, placeholder_text="정밀 추천용").grid(row=0, column=5, padx=6)
 
         g = ctk.CTkFrame(f, fg_color="transparent")
         g.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(4, 0))
@@ -204,6 +208,9 @@ class CandidatePanel:
         ctk.CTkCheckBox(g, text="상장 2년 이상만", variable=self.listed_min).grid(row=0, column=6, padx=(12, 0))
         self.search_btn = ctk.CTkButton(g, text="후보 검색", width=100, command=self.search)
         self.search_btn.grid(row=0, column=7, padx=(12, 0))
+        self.precise_btn = ctk.CTkButton(g, text=f"정밀 추천(상위 {ps.PRECISE_TOP})", width=130,
+                                         command=self.precise_recommend, state="disabled")
+        self.precise_btn.grid(row=0, column=8, padx=(6, 0))
 
     # ── 표에서 찾기 (회사가 준 피어 리스트 붙여넣기 → 하이라이트·후보에 추가·일괄 선택) ─────
     def _build_search(self, parent):
@@ -356,14 +363,20 @@ class CandidatePanel:
         negs = ps.parse_keywords(self.neg_var.get())
         ksic_codes = [c.strip().upper().lstrip("C") for c in self.ksic_var.get().split(",") if c.strip()]
         tcap = self._num(self.target_cap_var)
+        t = self.app.sess["target"]
+        target_products = None
+        if t.get("listed") and t.get("code"):                # 대상 주요제품 토큰 유사도(+1/개, 최대 +3)용
+            krow = next((r for r in self.app.kind_rows if r.get("code") == t["code"]), None)
+            target_products = (krow or {}).get("products")
         found = ps.search(self.app.kind_rows, kws, as_of, markets=markets,
                           cap_min=self._num(self.cap_min) if caps else None,
                           cap_max=self._num(self.cap_max) if caps else None,
                           caps=self.app.caps or caps, target_ksic=target_ksic,
                           listed_min_days=730 if self.listed_min.get() else None,
                           industry=industry, exclude_keywords=negs, ksic_codes=ksic_codes,
-                          target_cap=tcap * 1e8 if tcap else None)
-        self.app.candidates = ps.rank(found)                 # 추천 5개가 맨 위
+                          target_cap=tcap * 1e8 if tcap else None, target_products=target_products)
+        self.app.candidates = ps.rank(found, target_cap_eok=tcap)   # 추천 5개가 맨 위, 동점은 시총 거리
+        self.precise_btn.configure(state="normal" if found else "disabled")
         by_code = {r["code"]: r for r in self.app.kind_rows}
         seen = {r["code"] for r in self.app.candidates}
         for code in self.app.sess.get("manual_codes", []):   # 수동추가 행은 재검색에도 유지
@@ -376,6 +389,76 @@ class CandidatePanel:
                                           "cap_max": self._num(self.cap_max), "listed_min": self.listed_min.get(),
                                           "exclude_keywords": negs, "ksic_codes": ksic_codes, "target_cap": tcap}})
         self.render()
+
+    # ── 정밀 추천: 1차 상위 N개만 DART 경량 조회(주요계정+감사의견) → 재점수 ─────
+    def precise_recommend(self):
+        if not self.app.candidates:
+            self.app.set_status("후보를 먼저 검색하세요.")
+            return
+        if not self.app.api_key:
+            self.app.set_status("DART 인증키가 없습니다 (설정).")
+            return
+        codes = [r["code"] for r in self.app.candidates
+                 if (r.get("score") or 0) > 0 and ps.FLAG_MANUAL not in (r.get("flags") or [])][:ps.PRECISE_TOP]
+        if not codes:
+            self.app.set_status("점수 > 0 인 후보가 없습니다.")
+            return
+        self.precise_btn.configure(state="disabled")
+        self.app.set_status(f"정밀 추천 — 상위 {len(codes)}개 DART 조회 중…")
+        threading.Thread(target=self._precise_worker, args=(codes, self.as_of_var.get().strip()), daemon=True).start()
+
+    def _precise_worker(self, codes, as_of):
+        import dart_inputs as di
+        fin = dict(getattr(self.app, "fin_brief", {}) or {})
+        try:
+            cmap = self.app.fetchers["corp_map"]()
+        except Exception as e:
+            self.app.ui(lambda: (self.precise_btn.configure(state="normal"),
+                                 self.app.set_status(f"정밀 추천 실패 — corp_code 조회: {e}")))
+            return
+
+        def one(code):                                       # 워커 스레드 — UI 호출 금지
+            if code in fin:
+                return
+            cc = cmap.get(code)
+            if not cc:
+                return
+            out = {}
+            for y in di.annual_years_for(as_of):
+                try:
+                    out = dict(self.app.fetchers["brief"](cc, y) or {})
+                except Exception:
+                    out = {}
+                if out.get("sales") is not None or out.get("total_liab") is not None:
+                    break
+            for y in di.annual_years_for(as_of):
+                try:
+                    op = self.app.fetchers["audit"](cc, y)
+                except Exception:
+                    op = None
+                if op:
+                    out["audit_opinion"] = op
+                    break
+            if out:
+                fin[code] = out
+
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            list(ex.map(one, codes))
+        self.app.fin_brief = fin
+        self.app.ui(self._apply_refine)
+
+    def _apply_refine(self):
+        self.precise_btn.configure(state="normal")
+        try:
+            tcap, tsales = self._num(self.target_cap_var), self._num(self.target_sales_var)
+        except ValueError:
+            tcap = tsales = None
+        manual = [r for r in self.app.candidates if ps.FLAG_MANUAL in (r.get("flags") or [])]
+        main = [r for r in self.app.candidates if ps.FLAG_MANUAL not in (r.get("flags") or [])]
+        self.app.candidates = ps.refine(main, getattr(self.app, "fin_brief", {}),
+                                        target_sales_eok=tsales, target_cap_eok=tcap) + manual
+        self.render()
+        self.app.set_status(f"정밀 추천 완료 — 재무·감사의견 {len(getattr(self.app, 'fin_brief', {}))}개 반영 (★ 재배치)")
 
     @staticmethod
     def _mark(b):
@@ -409,7 +492,7 @@ class CandidatePanel:
         n = len(self.app.candidates)
         extra = f" · 앞 {self.MAX_ROWS}개만 표시" if n > self.MAX_ROWS else ""
         rec = sum(1 for r in self.app.candidates if r.get("recommended"))
-        self.count_label.configure(text=f"후보 {n}개 · ★추천 {rec}개(업종+3 · KSIC+2/+1 · 키워드+2/개 · 시총유사+2 · 제외어−5 · 신규상장−5) · 선택 {len(self.selected_codes())}개{extra}")
+        self.count_label.configure(text=f"후보 {n}개 · ★추천 {rec}개(업종+3 · KSIC+3/+2/+1 · 키워드 제품+2/업종+1 · 제품유사+1(≤3) · 시총유사+2 · 제외어−5 · 신규상장−5 · 정밀: 매출유사+2·흑자+1·적자−1·비적정 제외·D/E>5x−3) · 선택 {len(self.selected_codes())}개{extra}")
 
     def _refresh_row(self, code):
         st = self.rows_state[code]
@@ -513,6 +596,10 @@ class CandidatePanel:
             s["target"]["cap_eok"] = self._num(self.target_cap_var)  # SRP 분위 판정에도 쓴다(억)
         except ValueError:
             s["target"]["cap_eok"] = None
+        try:
+            s["target"]["sales_eok"] = self._num(self.target_sales_var)   # 정밀 추천 매출 규모 비교(억)
+        except ValueError:
+            s["target"]["sales_eok"] = None
         s["as_of"] = self.as_of_var.get().strip()
         s["fs_month"] = {"3월말": 3, "6월말": 6, "9월말": 9, "12월말": 12}.get(self.fs_seg.get())
         try:
@@ -556,6 +643,8 @@ class CandidatePanel:
         self.neg_var.set(", ".join(fl.get("exclude_keywords", ps.parse_keywords(ps.DEFAULT_EXCLUDE_KEYWORDS))))
         self.ksic_var.set(", ".join(fl.get("ksic_codes", [])))
         self.target_cap_var.set("" if fl.get("target_cap") is None else str(fl["target_cap"]))
+        sv = t.get("sales_eok")
+        self.target_sales_var.set("" if sv is None else f"{sv:g}")
         self.app.summary_panel.apply_session(s)
         if self.app.kind_rows:
             self.search()

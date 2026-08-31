@@ -244,6 +244,45 @@ def fetch_operating_income(api_key, corp_code, year, fs_div="CFS"):
     return parse_operating_income(js)
 
 
+_ACC_PREFIX = re.compile(r"^[IVX0-9]+\.\s*")             # 'I. 매출액' → '매출액'
+_SALES_NAMES = ("매출액", "수익(매출액)", "영업수익", "매출")
+
+
+def parse_brief(js):
+    """[정밀 추천]용 경량 요약 — 한 fnlttSinglAcntAll 응답에서 매출액·영업이익·부채총계·자본총계.
+    매출은 sj_div IS→CIS 한정('매출' 접두 검색은 BS 매출채권 오매칭)."""
+    sales = op = liab = eq = None
+    for div in ("IS", "CIS"):
+        for x in js.get("list", []):
+            if x.get("sj_div") != div:
+                continue
+            n = _ACC_PREFIX.sub("", (x.get("account_nm") or "").strip()).replace(" ", "")
+            if sales is None and n in _SALES_NAMES:
+                sales = _amt(x.get("thstrm_amount"))
+            if op is None and (n.startswith(("영업이익", "영업손실")) or n == "영업손익"):
+                op = _amt(x.get("thstrm_amount"))
+        if sales is not None and op is not None:
+            break
+    for x in js.get("list", []):
+        if x.get("sj_div") != "BS":
+            continue
+        n = (x.get("account_nm") or "").replace(" ", "")
+        if n == "부채총계":
+            liab = _amt(x.get("thstrm_amount"))
+        elif n == "자본총계":
+            eq = _amt(x.get("thstrm_amount"))
+    return {"sales": sales, "op_income": op, "total_liab": liab, "total_equity": eq}
+
+
+def fetch_brief(api_key, corp_code, year, fs_div="CFS"):
+    js = _get(api_key, "fnlttSinglAcntAll.json", corp_code=corp_code, bsns_year=str(year), reprt_code="11011", fs_div=fs_div)
+    if js.get("status") == "013" and fs_div == "CFS":
+        return fetch_brief(api_key, corp_code, year, "OFS")
+    if js.get("status") != "000":
+        raise RuntimeError(f"DART {js.get('status')}: {js.get('message')}")
+    return parse_brief(js)
+
+
 def parse_audit_opinion(js):
     """최근 사업연도(당기) 감사의견 문자열. 없으면 None."""
     for x in js.get("list", []):
