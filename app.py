@@ -27,7 +27,7 @@ class PeerApp(ctk.CTk):
 
         settings.ensure_dirs()
         self.cfg = settings.load_config()
-        self.api_key = settings.dart_api_key_with_fallback(self.cfg)
+        self.api_key = self.cfg.get("dart_api_key", "")
         self.fetchers = pipeline.default_fetchers(self.api_key)
         self.krx_ok = False
         self.dart_state = "확인 중"
@@ -83,19 +83,9 @@ class PeerApp(ctk.CTk):
         return f"DART 키 {self.dart_state} · KRX {'로그인 ✔' if self.krx_ok else '미로그인 ✘'}"
 
     def _check_dart_key(self):
-        """config 키가 무효하면 dart_downloader 키로 폴백. 상태 문자열을 dart_state에 둔다."""
+        """키 검증 결과를 dart_state에 둔다. 키는 이 앱의 config.txt에서만 읽는다."""
         ok, msg = dart_inputs.check_key(self.api_key)
-        if ok:
-            self.dart_state = "✔"
-            return
-        alt = settings.dart_api_key_with_fallback({"dart_api_key": ""})
-        if alt and alt != self.api_key and dart_inputs.check_key(alt)[0]:
-            self.api_key = alt
-            self.fetchers = pipeline.default_fetchers(alt)
-            self.dart_state = "✔(config 키 무효 → dart_downloader 키 사용)"
-            self.set_status(f"config.txt의 DART 키가 무효({msg}) — dart_downloader 키로 대신 진행합니다.")
-        else:
-            self.dart_state = f"✘ {msg}"
+        self.dart_state = "✔" if ok else f"✘ {msg}"
 
     # ── 시작 시 백그라운드 ───────────────────────────────────────────────
     def _startup(self):
@@ -137,7 +127,7 @@ class PeerApp(ctk.CTk):
         def save():
             self.cfg = {k: v.get().strip() for k, v in vars_.items()}
             settings.save_config(self.cfg)
-            self.api_key = settings.dart_api_key_with_fallback(self.cfg)
+            self.api_key = self.cfg.get("dart_api_key", "")
             self.fetchers = pipeline.default_fetchers(self.api_key)
             win.destroy()
             threading.Thread(target=self._relogin, daemon=True).start()

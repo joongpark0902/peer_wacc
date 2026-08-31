@@ -35,8 +35,7 @@ class LoadConfigTest(unittest.TestCase):
             settings.save_config({"dart_api_key": "K", "krx_id": "i", "krx_pw": "p", "kicpa_path": r"C:\x\베타.xlsx"})
             self.assertEqual(settings.load_config()["kicpa_path"], r"C:\x\베타.xlsx")
 
-    def test_dart_key_falls_back_to_downloader_config(self):
-        p = self._write("# DART\napi_key = FROM_DOWNLOADER\n")
-        with mock.patch.object(settings, "DOWNLOADER_CONFIG_PATH", p):
-            self.assertEqual(settings.dart_api_key_with_fallback({"dart_api_key": ""}), "FROM_DOWNLOADER")
-            self.assertEqual(settings.dart_api_key_with_fallback({"dart_api_key": "MINE"}), "MINE")
+    def test_no_external_key_fallback(self):
+        """다른 앱(dart_downloader)의 config를 읽는 폴백은 제거됨 — 키는 이 앱 config.txt에서만."""
+        self.assertFalse(hasattr(settings, "dart_api_key_with_fallback"))
+        self.assertFalse(hasattr(settings, "DOWNLOADER_CONFIG_PATH"))
