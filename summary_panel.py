@@ -159,12 +159,34 @@ class SummaryPanel:
                 self.app.log(f"config 저장 실패: {e}")
         dates = {v.get("base_date") for v in self.app.kicpa.values()} - {None}
         self.kicpa_label.configure(text=f"한공회 파일: {os.path.basename(p)} ({len(self.app.kicpa)}종목, 기준일 {', '.join(sorted(dates)) or '?'})")
-        if dates and self.app.sess["as_of"] not in dates:
-            self.progress.configure(text=f"주의: 한공회 기준일 {sorted(dates)} ≠ 앱 기준일 {self.app.sess['as_of']}", text_color=NEGATIVE)
+        self.recheck_kicpa_date()
         for p_ in self.app.peers_loaded:
             k = self.app.kicpa.get(p_["code"])
             p_["kicpa"] = {kk: k.get(kk) for kk in ("base_date", "close", "raw", "adjusted", "points")} if k else None
             p_["close_kicpa"] = k.get("close") if k else None
+        self.render()
+
+    def recheck_kicpa_date(self, as_of=None):
+        """한공회 파일 기준일 ≠ 앱 기준일 경고를 갱신 — 기준일을 맞추면 지운다(경고가 계속 떠있지 않게)."""
+        if not self.app.kicpa:
+            return
+        dates = {v.get("base_date") for v in self.app.kicpa.values()} - {None}
+        as_of = as_of or self.app.sess.get("as_of")
+        if dates and as_of not in dates:
+            self.progress.configure(text=f"주의: 한공회 기준일 {sorted(dates)} ≠ 앱 기준일 {as_of}", text_color=NEGATIVE)
+            self._kicpa_warned = True
+        elif getattr(self, "_kicpa_warned", False):
+            self.progress.configure(text="")
+            self._kicpa_warned = False
+
+    def reset(self):
+        """옵션·표·메시지를 초기값으로 (app.reset 에서 호출 — sess 는 이미 새것, 한공회 파일은 유지)."""
+        self.apply_session(self.app.sess)
+        self.progress.configure(text="", text_color=TEXT_SECONDARY)
+        self._kicpa_warned = False
+        self.result_label.configure(text="")
+        self.report_btn.configure(state="disabled")
+        self.rows, self.include_vars = [], {}
         self.render()
 
     # ── 피어 로드 ───────────────────────────────────────────────────────

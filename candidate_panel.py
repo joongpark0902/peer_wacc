@@ -167,7 +167,10 @@ class CandidatePanel:
         self.as_of_var = tk.StringVar(value=default_as_of())
         af = ctk.CTkFrame(f, fg_color="transparent")
         af.grid(row=0, column=1, columnspan=2, sticky="w")
-        ctk.CTkEntry(af, textvariable=self.as_of_var, width=110).grid(row=0, column=0, padx=6)
+        ae = ctk.CTkEntry(af, textvariable=self.as_of_var, width=110)
+        ae.grid(row=0, column=0, padx=6)
+        ae.bind("<FocusOut>", lambda _e: self._on_as_of_changed())
+        ae.bind("<Return>", lambda _e: self._on_as_of_changed())
         ctk.CTkLabel(af, text="재무 기준일").grid(row=0, column=1, padx=(12, 4))
         # 주가·금리는 기준일, 재무제표만 지정 분기말 이하 최신 보고서로 — 반기 미공시 기간 등에 피어 재무 시점을 통일
         self.fs_seg = ctk.CTkSegmentedButton(af, values=["자동", "3월말", "6월말", "9월말", "12월말"], width=280)
@@ -577,8 +580,10 @@ class CandidatePanel:
         f.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
         ctk.CTkButton(f, text="세션 저장", width=90, command=self.save_session).grid(row=0, column=0, padx=(0, 6))
         ctk.CTkButton(f, text="세션 열기", width=90, command=self.open_session).grid(row=0, column=1)
-        f.grid_columnconfigure(2, weight=1)
-        ctk.CTkButton(f, text="선택한 피어로 요약 탭 →", width=170, command=self._go_summary).grid(row=0, column=3, sticky="e")
+        ctk.CTkButton(f, text="초기화", width=70, command=self.app.reset,
+                      fg_color="transparent", border_width=1, text_color=ui_theme.TEXT_PRIMARY).grid(row=0, column=2, padx=(6, 0))
+        f.grid_columnconfigure(3, weight=1)
+        ctk.CTkButton(f, text="선택한 피어로 요약 탭 →", width=170, command=self._go_summary).grid(row=0, column=4, sticky="e")
 
     def _go_summary(self):
         if not self.selected_codes():
@@ -608,6 +613,30 @@ class CandidatePanel:
             s["fs_as_of"] = None
         s["keywords"] = ps.parse_keywords(self.kw_var.get())
         return s
+
+    def _on_as_of_changed(self):
+        as_of = self.as_of_var.get().strip()
+        self.app.sess["as_of"] = as_of or self.app.sess["as_of"]
+        self.app.summary_panel.recheck_kicpa_date(as_of)     # 기준일을 파일과 맞추면 경고가 사라진다
+
+    def reset(self):
+        """입력·후보 표·찾기 상태를 초기값으로 (app.reset 에서 호출 — sess 는 이미 새것)."""
+        self.listed_seg.set("상장")
+        self.name_var.set(""); self.industry_var.set("")
+        self.match_box.delete(0, "end"); self.industry_box.grid_remove()
+        self.target_info.configure(text="")
+        self.as_of_var.set(self.app.sess.get("as_of", default_as_of()))
+        self.fs_seg.set("자동")
+        self.kw_var.set(""); self.neg_var.set(ps.DEFAULT_EXCLUDE_KEYWORDS); self.ksic_var.set("")
+        self.target_cap_var.set(""); self.target_sales_var.set("")
+        self.cap_min.set(""); self.cap_max.set(""); self.listed_min.set(False)
+        self.mk_kospi.set(True); self.mk_kosdaq.set(True)
+        self.find_var.set(""); self.find_label.configure(text="")
+        self._found, self._addable = [], []
+        self.select_found_btn.configure(state="disabled")
+        self.add_found_btn.configure(state="disabled")
+        self.precise_btn.configure(state="disabled")
+        self.render()
 
     def save_session(self):
         s = self.collect_session()

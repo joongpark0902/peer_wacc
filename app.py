@@ -33,7 +33,7 @@ class PeerApp(ctk.CTk):
         self.dart_state = "확인 중"
         self.sess = sess_mod.new("", default_as_of())
         self.kind_rows, self.candidates, self.peers_loaded, self.index_daily = [], [], [], []
-        self.kicpa, self.caps, self.rates = {}, {}, None
+        self.kicpa, self.caps, self.rates, self.fin_brief = {}, {}, None, {}
 
         self._build_ui()
         ui_theme.apply_titlebar_theme(self)
@@ -68,6 +68,15 @@ class PeerApp(ctk.CTk):
 
     def show_summary(self):
         self.tabs.set("2. 요약 · WACC")
+
+    def reset(self):
+        """새 작업 시작 — 후보·선택·피어·조회 캐시·메시지를 비운다. 상장사 목록·설정·한공회 파일은 유지."""
+        self.sess = sess_mod.new("", default_as_of())
+        self.candidates, self.peers_loaded, self.index_daily = [], [], []
+        self.rates, self.fin_brief = None, {}
+        self.candidate_panel.reset()
+        self.summary_panel.reset()
+        self.set_status("초기화 완료 — 새 작업을 시작하세요. (상장사 목록·설정·한공회 파일은 유지)")
 
     # ── 공용 ────────────────────────────────────────────────────────────
     def ui(self, fn, *args):

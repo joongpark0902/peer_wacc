@@ -122,6 +122,11 @@ class KicpaAutoloadTest(unittest.TestCase):
                 a.cfg["kicpa_path"] = ""
                 a.summary_panel._load_kicpa(kfile); a.update()
                 self.assertEqual(settings._read_kv(cfgp).get("kicpa_path"), kfile)
+                # 기준일 불일치 경고는 기준일을 파일과 맞추면 사라진다 (계속 떠있지 않게)
+                a.candidate_panel.as_of_var.set("2026-06-30"); a.candidate_panel._on_as_of_changed()
+                self.assertIn("한공회 기준일", a.summary_panel.progress.cget("text"))
+                a.candidate_panel.as_of_var.set("2026-03-31"); a.candidate_panel._on_as_of_changed()
+                self.assertEqual(a.summary_panel.progress.cget("text"), "")
                 a.destroy()
 
 
@@ -213,4 +218,13 @@ class GuiFlowTest(unittest.TestCase):
                 self.assertEqual(wb["이자부부채 산정내역"]["C5"].value, "2025-12-31")
                 self.assertAlmostEqual(wb["WACC"]["C18"].value, -0.0051)   # 시총 2조 → 1분위 -0.51%
                 self.assertIn("1분위", wb["WACC"]["D18"].value)
+                # 초기화: 후보·선택·피어·조회 캐시·메시지 리셋, 상장사 목록·fetchers 는 유지
+                a.reset(); a.update()
+                self.assertEqual((a.candidates, a.peers_loaded, a.fin_brief, a.rates), ([], [], {}, None))
+                self.assertEqual(a.sess["target"]["name"], "")
+                self.assertEqual(cp.selected_codes(), [])
+                self.assertEqual(cp.find_var.get(), "")
+                self.assertEqual(sp.progress.cget("text"), "")
+                self.assertIn("집계 없음", sp.agg_label.cget("text"))
+                self.assertTrue(a.kind_rows)                              # 상장사 목록은 유지
                 a.destroy()
