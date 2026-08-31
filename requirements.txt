@@ -2,3 +2,4 @@ requests>=2.31
 customtkinter>=5.2
 pykrx>=1.2.8
 openpyxl>=3.1
+pywin32>=306      # 선택: 보고서 생성 시 Excel(COM)로 계산값 저장 — 없으면 자동 생략
