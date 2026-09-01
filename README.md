@@ -3,7 +3,10 @@
 KIND 상장사 목록을 키워드로 걸러 유사기업 후보를 고르고, 확정 피어의 KRX 주가·DART 재무·한공회 베타로
 βU 평균·목표 D/E·재레버 βL을 계산해 수식이 살아 있는 엑셀 조서를 만든다.
 
-실행: `python app.py` · 테스트: `python -m unittest discover -s tests -t .`
+**설치 없이 쓰기**: [Releases](https://github.com/joongpark0902/peer_wacc/releases)에서 포터블 zip을 받아
+압축 해제 후 `실행.bat` 더블클릭 (Python 동봉, DART 인증키만 필요). 안내: `사용법.md`
+
+실행(소스): `python app.py` · 테스트: `python -m unittest discover -s tests -t .`
 설정: `config.txt` (dart_api_key, krx_id, krx_pw) — git 제외.
 피어 선정 기준: `docs/peer_selection_criteria.md`
 
