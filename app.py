@@ -18,11 +18,12 @@ from summary_panel import SummaryPanel
 
 class PeerApp(ctk.CTk):
     def __init__(self):
-        ui_theme.apply_theme()
+        preference = settings.load_ui_preferences()
+        ui_theme.apply_theme(preference["appearance_mode"])
         super().__init__()
         self.configure(fg_color=ui_theme.WINDOW_BG)
         self.title("동종기업 · WACC 베타/목표부채비율")
-        self.geometry("1420x780")
+        self.geometry("1480x880")
         self.minsize(1100, 600)
 
         settings.ensure_dirs()
@@ -36,6 +37,7 @@ class PeerApp(ctk.CTk):
         self.kicpa, self.caps, self.rates, self.fin_brief = {}, {}, None, {}
 
         self._build_ui()
+        ui_theme.refresh_native_widgets(self)
         ui_theme.apply_titlebar_theme(self)
         kp = self.cfg.get("kicpa_path")
         if kp and os.path.exists(kp):                  # 마지막으로 연 한공회 베타 파일 자동 로드 (UI 스레드)
@@ -46,18 +48,28 @@ class PeerApp(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
         top = ctk.CTkFrame(self, fg_color="transparent")
-        top.grid(row=0, column=0, sticky="ew", padx=12, pady=(8, 0))
+        top.grid(row=0, column=0, sticky="ew", padx=24, pady=(20, 4))
         top.grid_columnconfigure(0, weight=1)
-        self.status_label = ctk.CTkLabel(top, text="시작 중…", anchor="w", text_color=ui_theme.TEXT_SECONDARY)
-        self.status_label.grid(row=0, column=0, sticky="ew")
-        self.env_label = ctk.CTkLabel(top, text="", anchor="e", text_color=ui_theme.TEXT_SECONDARY)
-        self.env_label.grid(row=0, column=1, sticky="e", padx=(8, 8))
-        ctk.CTkButton(top, text="설정", width=60, command=self._open_settings).grid(row=0, column=2)
+        ctk.CTkLabel(top, text="PEER / WACC", font=ctk.CTkFont(size=23, weight="bold"),
+                     text_color=ui_theme.ACCENT, anchor="w").grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(top, text="동종기업 선정 · 자본비용 분석", text_color=ui_theme.TEXT_SECONDARY,
+                     anchor="w").grid(row=1, column=0, sticky="w")
+        self.dark_mode_var = tk.BooleanVar(value=ctk.get_appearance_mode().lower() == "dark")
+        self.theme_switch = ctk.CTkSwitch(top, text="다크모드", variable=self.dark_mode_var,
+                                         command=self._toggle_dark_mode)
+        self.theme_switch.grid(row=0, column=1, rowspan=2, padx=(16, 20))
+        ui_theme.Button(top, text="연결 설정", width=90, fg_color=ui_theme.ACCENT_SOFT,
+                       text_color=ui_theme.TEXT_PRIMARY, hover_color=ui_theme.FOUND_FILL,
+                       command=self._open_settings).grid(row=0, column=2, rowspan=2)
 
         # 후보군 / 요약 을 탭으로 — 한 화면에 다 넣으면 열이 잘려서 보기 어렵다
-        self.tabs = ctk.CTkTabview(self, fg_color=ui_theme.WINDOW_BG, segmented_button_selected_color=ui_theme.ACCENT,
-                                   segmented_button_unselected_color=ui_theme.ACCENT_SOFT, segmented_button_selected_hover_color=ui_theme.ACCENT_HOVER)
-        self.tabs.grid(row=1, column=0, sticky="nsew", padx=12, pady=(4, 12))
+        self.tabs = ctk.CTkTabview(self, fg_color=ui_theme.WINDOW_BG, anchor="w",
+                                   segmented_button_selected_color=ui_theme.ACCENT_SOFT,
+                                   segmented_button_unselected_color=ui_theme.WINDOW_BG,
+                                   segmented_button_selected_hover_color=ui_theme.FOUND_FILL,
+                                   segmented_button_unselected_hover_color=ui_theme.ACCENT_SOFT,
+                                   text_color=ui_theme.TEXT_PRIMARY)
+        self.tabs.grid(row=1, column=0, sticky="nsew", padx=18, pady=(0, 0))
         t1, t2 = self.tabs.add("1. 후보군"), self.tabs.add("2. 요약 · WACC")
         for t in (t1, t2):
             t.grid_columnconfigure(0, weight=1); t.grid_rowconfigure(0, weight=1)
@@ -65,6 +77,23 @@ class PeerApp(ctk.CTk):
         self.candidate_panel.frame.grid(row=0, column=0, sticky="nsew")
         self.summary_panel = SummaryPanel(t2, self)
         self.summary_panel.frame.grid(row=0, column=0, sticky="nsew")
+
+        status = ctk.CTkFrame(self, fg_color="transparent")
+        status.grid(row=2, column=0, sticky="ew", padx=26, pady=(0, 8))
+        status.grid_columnconfigure(0, weight=1)
+        self.status_label = ctk.CTkLabel(status, text="시작 중…", anchor="w", text_color=ui_theme.TEXT_SECONDARY)
+        self.status_label.grid(row=0, column=0, sticky="ew")
+        self.env_label = ctk.CTkLabel(status, text="", anchor="e", text_color=ui_theme.TEXT_SECONDARY)
+        self.env_label.grid(row=0, column=1, sticky="e", padx=(12, 0))
+
+    def _toggle_dark_mode(self):
+        mode = "dark" if self.dark_mode_var.get() else "light"
+        ctk.set_appearance_mode(mode)
+        ui_theme.refresh_native_widgets(self)
+        try:
+            settings.save_ui_preferences(mode)
+        except OSError as error:
+            self.set_status(f"화면 모드는 전환했습니다. 설정 저장 실패: {error}")
 
     def show_summary(self):
         self.tabs.set("2. 요약 · WACC")
@@ -140,7 +169,7 @@ class PeerApp(ctk.CTk):
             self.fetchers = pipeline.default_fetchers(self.api_key)
             win.destroy()
             threading.Thread(target=self._relogin, daemon=True).start()
-        ctk.CTkButton(win, text="저장", command=save).grid(row=3, column=1, sticky="e", padx=8, pady=12)
+        ui_theme.Button(win, text="저장", command=save).grid(row=3, column=1, sticky="e", padx=8, pady=12)
 
     def _relogin(self):
         self._check_dart_key()

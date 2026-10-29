@@ -8,6 +8,7 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 import tkinter.ttk as ttk
+import tkinter.font as tkfont
 
 import beta as B
 import kicpa_beta
@@ -17,6 +18,7 @@ import pipeline
 import report
 import settings
 import ui_theme
+from load_status import LoadStatus
 from settings import DOWNLOADS_DIR
 from ui_theme import NEGATIVE, TEXT_SECONDARY, table_cell, table_header, zebra_bg
 
@@ -34,6 +36,9 @@ class SummaryPanel:
         self.app = app
         self.rows = []
         self.include_vars = {}
+        self._loading = False
+        self._load_status = None
+        self._load_poll_id = None
         self.frame = ctk.CTkFrame(parent, fg_color=ui_theme.PANEL_BG, border_width=1, border_color=ui_theme.BORDER)
         self.frame.grid_columnconfigure(0, weight=1)
         self.frame.grid_rowconfigure(2, weight=1)
@@ -44,50 +49,51 @@ class SummaryPanel:
 
     def _build_top(self, parent):
         f = ctk.CTkFrame(parent, fg_color="transparent")
-        f.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
-        ctk.CTkLabel(f, text="요약", font=ctk.CTkFont(size=15, weight="bold"), text_color=ui_theme.ACCENT).grid(row=0, column=0, sticky="w")
+        f.grid(row=0, column=0, sticky="ew", padx=20, pady=(16, 12))
+        ctk.CTkLabel(f, text="요약 · WACC", font=ctk.CTkFont(size=22, weight="bold"), text_color=ui_theme.TEXT_PRIMARY).grid(row=0, column=0, sticky="w", pady=(0, 12))
         ctk.CTkLabel(f, text="베타 소스").grid(row=0, column=1, padx=(16, 4))
         self.src_seg = ctk.CTkSegmentedButton(f, values=["산출(KRX)", "한공회 파일"], command=self._on_source, width=180)
         self.src_seg.set("한공회 파일")
         self.src_seg.grid(row=0, column=2)
-        ctk.CTkButton(f, text="한공회 파일 열기", width=120, command=self.open_kicpa).grid(row=0, column=3, padx=(8, 0))
-        ctk.CTkLabel(f, text="목표 D/E").grid(row=0, column=4, padx=(16, 4))
+        ui_theme.Button(f, text="한공회 파일 열기", width=120, command=self.open_kicpa).grid(row=0, column=3, padx=(8, 0))
+        ctk.CTkLabel(f, text="목표 D/E").grid(row=1, column=0, sticky="w")
         self.de_seg = ctk.CTkSegmentedButton(f, values=["평균", "중앙값"], command=self._on_de, width=120)
         self.de_seg.set("평균")
-        self.de_seg.grid(row=0, column=5)
-        ctk.CTkLabel(f, text="대상 세율").grid(row=0, column=6, padx=(16, 4))
+        self.de_seg.grid(row=1, column=1)
+        ctk.CTkLabel(f, text="대상 세율").grid(row=1, column=2, padx=(16, 4), sticky="e")
         self.tax_var = tk.StringVar(value="27.5")
         e = ctk.CTkEntry(f, textvariable=self.tax_var, width=56)
-        e.grid(row=0, column=7)
+        e.grid(row=1, column=3, sticky="w")
         e.bind("<FocusOut>", lambda _e: self._on_tax())
-        ctk.CTkLabel(f, text="%").grid(row=0, column=8)
+        ctk.CTkLabel(f, text="%").grid(row=1, column=4, sticky="w")
         self.lease_var = tk.BooleanVar(value=True)
-        ctk.CTkCheckBox(f, text="리스부채 포함(D)", variable=self.lease_var, command=self._on_lease).grid(row=0, column=9, padx=(16, 0))
-        ctk.CTkLabel(f, text="대상 순자산(억)").grid(row=0, column=10, padx=(16, 4))
+        ctk.CTkCheckBox(f, text="리스부채 포함(D)", variable=self.lease_var, command=self._on_lease).grid(row=1, column=5, padx=(16, 0))
+        ctk.CTkLabel(f, text="대상 순자산(억)").grid(row=1, column=6, padx=(16, 4))
         self.net_assets_var = tk.StringVar()
         na = ctk.CTkEntry(f, textvariable=self.net_assets_var, width=70, placeholder_text="SRP용")
-        na.grid(row=0, column=11)
+        na.grid(row=1, column=7)
         na.bind("<FocusOut>", lambda _e: self._on_net_assets())
 
         g = ctk.CTkFrame(parent, fg_color="transparent")
-        g.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 2))
+        g.grid(row=1, column=0, sticky="ew", padx=20, pady=(0, 12))
         g.grid_columnconfigure(2, weight=1)
-        self.load_btn = ctk.CTkButton(g, text="피어 자료 불러오기", width=140, command=self.load_peers)
+        self.load_btn = ui_theme.Button(g, text="피어 자료 불러오기", width=140, command=self.load_peers)
         self.load_btn.grid(row=0, column=0)
-        self.report_btn = ctk.CTkButton(g, text="보고서 만들기", width=120, command=self.make_report, state="disabled")
+        self.report_btn = ui_theme.Button(g, text="보고서 만들기", width=120, command=self.make_report, state="disabled")
         self.report_btn.grid(row=0, column=1, padx=(8, 0))
-        self.progress = ctk.CTkLabel(g, text="", text_color=TEXT_SECONDARY, anchor="w")
+        self.progress = ctk.CTkLabel(g, text="", text_color=TEXT_SECONDARY, anchor="w", justify="left", wraplength=640)
         self.progress.grid(row=0, column=2, sticky="ew", padx=12)
         self.kicpa_label = ctk.CTkLabel(g, text="한공회 파일: 없음", text_color=TEXT_SECONDARY, anchor="e")
-        self.kicpa_label.grid(row=0, column=3, sticky="e")
+        self.kicpa_label.grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
 
     def _build_bottom(self, parent):
         f = ctk.CTkFrame(parent, fg_color=ui_theme.SURFACE, border_width=1, border_color=ui_theme.BORDER)
         f.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 10))
-        self.agg_label = ctk.CTkLabel(f, text="집계 없음", anchor="w", justify="left", font=ctk.CTkFont(size=13, weight="bold"), text_color=ui_theme.ACCENT)
+        self.agg_label = ctk.CTkLabel(f, text="집계 없음", anchor="w", justify="left", wraplength=900, font=ctk.CTkFont(size=14, weight="bold"), text_color=ui_theme.ACCENT)
         self.agg_label.grid(row=0, column=0, sticky="w", padx=10, pady=8)
         self.result_label = ctk.CTkLabel(f, text="", anchor="w", text_color=TEXT_SECONDARY)
         self.result_label.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 8))
+        f.bind("<Configure>", lambda e: self.agg_label.configure(wraplength=max(200, e.width-32)))
 
     # ── 옵션 ────────────────────────────────────────────────────────────
     def _on_source(self, v):
@@ -191,6 +197,8 @@ class SummaryPanel:
 
     # ── 피어 로드 ───────────────────────────────────────────────────────
     def load_peers(self):
+        if self._loading:
+            return
         codes = self.app.candidate_panel.selected_codes()
         if not codes:
             self.progress.configure(text="후보군 탭에서 피어를 선택하세요 (선택 열 클릭).", text_color=NEGATIVE)
@@ -201,38 +209,65 @@ class SummaryPanel:
         self.app.candidate_panel.collect_session()
         self.load_btn.configure(state="disabled")
         self.report_btn.configure(state="disabled")
+        self._load_status = LoadStatus(len(codes), log=self.app.log)
+        self._loading = True
+        self._poll_loading_status()
         threading.Thread(target=self._load_worker, args=(codes,), daemon=True).start()
+
+    def _poll_loading_status(self):
+        self._load_poll_id = None
+        if not self._loading:
+            return
+        self.progress.configure(text=self._load_status.text(), text_color=TEXT_SECONDARY)
+        self._load_poll_id = self.app.after(500, self._poll_loading_status)
+
+    def _cancel_load_poll(self):
+        if self._load_poll_id is not None:
+            self.app.after_cancel(self._load_poll_id)
+            self._load_poll_id = None
 
     def _load_worker(self, codes):
         as_of = self.app.sess["as_of"]
         fs_as_of = self.app.sess.get("fs_as_of")
         tax = self.app.sess["tax_target"]
-        done = {"n": 0}
+        status = self._load_status = self._load_status or LoadStatus(len(codes), log=self.app.log)
+        stages = {"daily": "주가", "corp_map": "회사코드", "company": "기업정보", "bs": "재무상태표",
+                  "shares": "주식수", "pretax": "세전이익", "audit": "감사의견", "opinc": "영업이익"}
 
         def one(code):
             row = self.app.candidate_panel.kind_row(code)
             ov = self.app.sess["peer_overrides"].get(code, {})
-            p = pipeline.load_peer(code, row, as_of, self.app.fetchers, tax=tax, tax_override=ov.get("tax"),
+            def wrap(key, function):
+                def fetch(*args, **kwargs):
+                    return status.run(code, row["name"], stages.get(key, key), function, *args, **kwargs)
+                return fetch
+            fetchers = {key: wrap(key, function) for key, function in self.app.fetchers.items()}
+            p = pipeline.load_peer(code, row, as_of, fetchers, tax=tax, tax_override=ov.get("tax"),
                                    kicpa=self.app.kicpa.get(code), log=self.app.log,
                                    debt_override=ov.get("debt_include"), fs_as_of=fs_as_of)
             if ov.get("include") is not None:
                 p["include"] = ov["include"]
-            done["n"] += 1
-            self.app.after(0, lambda k=done["n"]: self.progress.configure(text=f"불러오는 중 {k}/{len(codes)}", text_color=TEXT_SECONDARY))
+            status.complete(code)
+            self.app.after(0, lambda: self.progress.configure(text=status.text(), text_color=TEXT_SECONDARY))
             return p
 
         # 피어 4개씩 동시에 (DART·KRX 호출이 대부분 대기 시간이라 병렬이 잘 먹는다)
-        with ThreadPoolExecutor(max_workers=4) as ex:
-            peers = list(ex.map(one, codes))
         try:
-            self.app.rates = kofia.market_rates(as_of, log=self.app.log)
+            with ThreadPoolExecutor(max_workers=4) as ex:
+                peers = list(ex.map(one, codes))
+        except Exception as error:
+            self.app.log(f"피어 로드 실패: {error}")
+            self.app.after(0, self._load_failed)
+            return
+        try:
+            self.app.rates = status.run("공통", "공통", "금투협 금리", kofia.market_rates, as_of, log=self.app.log)
         except Exception as e:
             self.app.log(f"금투협 조회 실패: {e}"); self.app.rates = None
         idx = []
         if self.app.krx_ok:
             try:
                 s, e = md.window_for(as_of)
-                idx = self.app.fetchers["index"](s, e)
+                idx = status.run("공통", "공통", "시장지수", self.app.fetchers["index"], s, e)
                 pipeline.compute_betas(peers, idx, as_of)
             except Exception as e:
                 self.app.log(f"지수 조회 실패: {e}")
@@ -240,11 +275,23 @@ class SummaryPanel:
         self.app.after(0, self._after_load)
 
     def _after_load(self):
+        self._loading = False
+        self._cancel_load_poll()
         self.load_btn.configure(state="normal")
         self.report_btn.configure(state="normal")
         n_ok = sum(1 for p in self.app.peers_loaded if p["status"] == "ok")
-        self.progress.configure(text=f"완료 — 정상 {n_ok} / 전체 {len(self.app.peers_loaded)}", text_color=TEXT_SECONDARY)
+        elapsed = f" · {self._load_status.elapsed():.1f}초" if self._load_status else ""
+        self._load_status = None
+        self.progress.configure(text=f"완료 — 정상 {n_ok} / 전체 {len(self.app.peers_loaded)}{elapsed}", text_color=TEXT_SECONDARY)
         self.render()
+
+    def _load_failed(self):
+        self._loading = False
+        self._cancel_load_poll()
+        self._load_status = None
+        self.load_btn.configure(state="normal")
+        self.report_btn.configure(state="normal" if self.app.peers_loaded else "disabled")
+        self.progress.configure(text="피어 조회 중 오류가 발생했습니다. 조회 로그를 확인하고 다시 시도하세요.", text_color=NEGATIVE)
 
     # ── 표 (ttk.Treeview) ────────────────────────────────────────────────
     _COLS = [("name", "회사명", 120, "w"), ("code", "코드", 60, "center"), ("close", "종가", 70, "e"), ("e", "E(억)", 80, "e"),
@@ -257,19 +304,16 @@ class SummaryPanel:
         box = ctk.CTkFrame(parent, fg_color=ui_theme.SURFACE, corner_radius=0)
         box.grid(row=2, column=0, sticky="nsew", padx=6, pady=4)
         box.grid_columnconfigure(0, weight=1); box.grid_rowconfigure(0, weight=1)
-        st = ttk.Style()
-        st.configure("Sum.Treeview", font=(ui_theme.FONT_FAMILY, 10), rowheight=26, borderwidth=0, background=ui_theme.SURFACE, fieldbackground=ui_theme.SURFACE)
-        st.configure("Sum.Treeview.Heading", font=(ui_theme.FONT_FAMILY, 10, "bold"), background=ui_theme.HEADER_FILL,
-                     foreground=ui_theme.HEADER_TEXT, relief="flat", padding=(4, 6))
-        st.map("Sum.Treeview.Heading", background=[("active", ui_theme.HEADER_FILL)])
-        st.map("Sum.Treeview", background=[("selected", ui_theme.SURFACE)], foreground=[("selected", ui_theme.TEXT_PRIMARY)])
+        ui_theme.style_tree("Sum.Treeview")
         self.tree = ttk.Treeview(box, columns=[c[0] for c in self._COLS], show="headings", style="Sum.Treeview", selectmode="none")
+        header_font = tkfont.Font(family=ui_theme.FONT_FAMILY, size=11, weight="bold")
         for key, title, width, anchor in self._COLS:
             self.tree.heading(key, text=title, anchor="center")
-            self.tree.column(key, width=width, minwidth=30, anchor=anchor, stretch=(key == "flags"))
-        self.tree.tag_configure("odd", background=ui_theme.ROW_STRIPE)
-        self.tree.tag_configure("out", foreground=TEXT_SECONDARY)
-        self.tree.tag_configure("flag", foreground=NEGATIVE)
+            minimum = header_font.measure(title) + 24
+            self.tree.column(key, width=max(width, minimum), minwidth=minimum, anchor=anchor, stretch=(key == "flags"))
+        self.tree.tag_configure("odd", background=ui_theme.color(ui_theme.ROW_STRIPE))
+        self.tree.tag_configure("out", foreground=ui_theme.color(TEXT_SECONDARY))
+        self.tree.tag_configure("flag", foreground=ui_theme.color(NEGATIVE))
         vs = ttk.Scrollbar(box, orient="vertical", command=self.tree.yview)
         hs = ttk.Scrollbar(box, orient="horizontal", command=self.tree.xview)
         self.tree.configure(yscrollcommand=vs.set, xscrollcommand=hs.set)
@@ -354,7 +398,10 @@ class SummaryPanel:
             bg = zebra_bg(i)
             v = tk.BooleanVar(value=bool(it.get("include", it["default"])))
             vars_[it["name"]] = v
-            tk.Checkbutton(body, variable=v, bg=bg, activebackground=bg, bd=0, highlightthickness=0).grid(row=i, column=0, sticky="ew")
+            check = tk.Checkbutton(body, variable=v, bd=0, highlightthickness=0)
+            ui_theme.native_colors(check, bg=bg, activebackground=bg, fg=ui_theme.TEXT_PRIMARY,
+                                   activeforeground=ui_theme.TEXT_PRIMARY, selectcolor=ui_theme.SURFACE)
+            check.grid(row=i, column=0, sticky="ew")
             table_cell(body, it["name"], bg=bg, row=i, column=1, padx=4)
             table_cell(body, f"{it['amount'] / 1e6:,.0f}", bg=bg, anchor="e", row=i, column=2, padx=4)
             table_cell(body, "포함" if it["default"] else "—", bg=bg, fg=TEXT_SECONDARY, row=i, column=3, padx=4)
@@ -369,7 +416,7 @@ class SummaryPanel:
             self.app.sess["peer_overrides"].setdefault(code, {})["debt_include"] = sel
             win.destroy()
             self.render()
-        ctk.CTkButton(foot, text="적용", width=80, command=apply).pack(side="right")
+        ui_theme.Button(foot, text="적용", width=80, command=apply).pack(side="right")
 
     # ── 보고서 ──────────────────────────────────────────────────────────
     def make_report(self):

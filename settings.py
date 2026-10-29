@@ -5,6 +5,9 @@ exe로 묶으면 __file__ 은 임시 해제 폴더를 가리키므로 실행파�
 """
 import os
 import sys
+import json
+import datetime as dt
+import shutil
 
 if getattr(sys, "frozen", False):
     APP_DIR = os.path.dirname(sys.executable)
@@ -15,6 +18,46 @@ CONFIG_PATH = os.path.join(APP_DIR, "config.txt")
 CACHE_DIR = os.path.join(APP_DIR, "cache")
 SESSION_DIR = os.path.join(APP_DIR, "peer_sessions")
 DOWNLOADS_DIR = os.path.join(APP_DIR, "downloads")
+UI_PREFERENCES_PATH = os.path.join(APP_DIR, "ui-preferences.json")
+
+
+def source_app_dir():
+    """관리 worktree에서도 원본 저장소에 이미 있는 공개 데이터 파일을 찾는다."""
+    try:
+        with open(os.path.join(APP_DIR, ".git"), encoding="utf-8") as f:
+            marker = f.read().strip()
+        if not marker.startswith("gitdir:"):
+            return APP_DIR
+        git_dir = os.path.normpath(os.path.join(APP_DIR, marker.partition(":")[2].strip()))
+        with open(os.path.join(git_dir, "commondir"), encoding="utf-8") as f:
+            common = os.path.normpath(os.path.join(git_dir, f.read().strip()))
+        return os.path.dirname(common)
+    except (OSError, UnicodeError):
+        return APP_DIR
+
+
+def load_ui_preferences():
+    """표시 설정만 읽는다. 인증정보와 독립적으로 기본은 라이트 모드."""
+    try:
+        with open(UI_PREFERENCES_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        mode = data.get("appearance_mode") if isinstance(data, dict) else None
+    except (OSError, ValueError, UnicodeError):
+        mode = None
+    return {"appearance_mode": mode if mode in ("light", "dark") else "light"}
+
+
+def save_ui_preferences(mode):
+    if mode not in ("light", "dark"):
+        raise ValueError("appearance mode must be light or dark")
+    if os.path.exists(UI_PREFERENCES_PATH):
+        stamp = dt.datetime.fromtimestamp(os.path.getmtime(UI_PREFERENCES_PATH)).strftime("%Y%m%d_%H%M%S_%f")
+        backup = os.path.join(os.path.dirname(UI_PREFERENCES_PATH), f"backup_{stamp}_ui-preferences.json")
+        if not os.path.exists(backup):
+            shutil.copy2(UI_PREFERENCES_PATH, backup)
+    with open(UI_PREFERENCES_PATH, "w", encoding="utf-8") as f:
+        json.dump({"appearance_mode": mode}, f, indent=2)
+    return UI_PREFERENCES_PATH
 
 KEYS = ("dart_api_key", "krx_id", "krx_pw", "kicpa_path")
 

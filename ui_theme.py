@@ -37,25 +37,38 @@ def pick_font():
     return "Segoe UI"
 
 
-def apply_theme():
+def apply_theme(mode="light"):
     """앱 시작 때 한 번 부른다. 글꼴을 고르고, customtkinter 기본 테마색을 보고서와 같은 남색·하늘색으로 바꾼다."""
     global FONT_FAMILY, TABLE_CELL_FONT, TABLE_HEADER_FONT
     FONT_FAMILY = pick_font()
     TABLE_CELL_FONT = (FONT_FAMILY, -13, "normal roman  ")
     TABLE_HEADER_FONT = (FONT_FAMILY, -12)
-    ctk.set_appearance_mode("light")
+    ctk.set_appearance_mode(mode if mode in ("light", "dark") else "light")
     ctk.set_default_color_theme("blue")
     t = ctk.ThemeManager.theme
     t["CTkFont"]["family"] = FONT_FAMILY
-    t["CTkFont"]["size"] = 12
-    t["CTkButton"].update({"fg_color": [ACCENT, ACCENT], "hover_color": [ACCENT_HOVER, ACCENT_HOVER],
-                           "text_color": ["#FFFFFF", "#FFFFFF"], "corner_radius": 6})
-    t["CTkSegmentedButton"].update({"selected_color": [ACCENT, ACCENT], "selected_hover_color": [ACCENT_HOVER, ACCENT_HOVER],
-                                    "unselected_color": [ACCENT_SOFT, ACCENT_SOFT], "unselected_hover_color": ["#B3C7E6", "#B3C7E6"],
-                                    "fg_color": [ACCENT_SOFT, ACCENT_SOFT], "text_color": ["#FFFFFF", "#FFFFFF"], "corner_radius": 6})
-    t["CTkCheckBox"].update({"fg_color": [ACCENT, ACCENT], "hover_color": [ACCENT_HOVER, ACCENT_HOVER], "border_color": ["#9AA8BF", "#9AA8BF"]})
-    t["CTkEntry"].update({"border_color": [BORDER, BORDER], "fg_color": [SURFACE, SURFACE]})
-    t["CTkFrame"].update({"border_color": [BORDER, BORDER]})
+    t["CTkFont"]["size"] = 13
+    t["CTk"].update({"fg_color": WINDOW_BG})
+    t["CTkToplevel"].update({"fg_color": PANEL_BG})
+    t["CTkLabel"].update({"text_color": TEXT_PRIMARY})
+    t["CTkButton"].update({"fg_color": ACCENT, "hover_color": ACCENT_HOVER,
+                           "text_color": BUTTON_TEXT, "text_color_disabled": TEXT_SECONDARY,
+                           "border_color": BORDER, "corner_radius": 7})
+    t["CTkSegmentedButton"].update({"selected_color": FOUND_FILL, "selected_hover_color": ACCENT_SOFT,
+                                    "unselected_color": HEADER_FILL, "unselected_hover_color": ACCENT_SOFT,
+                                    "fg_color": ACCENT_SOFT, "text_color": TEXT_PRIMARY,
+                                    "text_color_disabled": TEXT_SECONDARY, "corner_radius": 6})
+    t["CTkCheckBox"].update({"fg_color": ACCENT, "hover_color": ACCENT_HOVER,
+                             "border_color": TEXT_SECONDARY, "text_color": TEXT_PRIMARY,
+                             "checkmark_color": BUTTON_TEXT})
+    t["CTkEntry"].update({"border_color": BORDER, "fg_color": SURFACE,
+                          "text_color": TEXT_PRIMARY, "placeholder_text_color": TEXT_SECONDARY})
+    t["CTkFrame"].update({"border_color": BORDER, "fg_color": PANEL_BG, "top_fg_color": SURFACE})
+    t["CTkSwitch"].update({"fg_color": BORDER, "progress_color": ACCENT,
+                           "button_color": SURFACE, "button_hover_color": HEADER_FILL,
+                           "text_color": TEXT_PRIMARY})
+    t["CTkScrollbar"].update({"button_color": BORDER, "button_hover_color": TEXT_SECONDARY})
+    LISTBOX_STYLE.update(listbox_style())
 
 
 def _rgb_hex_to_colorref(hex_color):
@@ -139,7 +152,7 @@ def apply_titlebar_theme(window):
             (DWMWA_BORDER_COLOR, BORDER),
         )
         for attr, hex_color in attrs:
-            value = wintypes.DWORD(_rgb_hex_to_colorref(hex_color))
+            value = wintypes.DWORD(_rgb_hex_to_colorref(color(hex_color)))
             hr = dwmapi.DwmSetWindowAttribute(
                 hwnd, wintypes.DWORD(attr), ctypes.byref(value), ctypes.sizeof(value)
             )
@@ -160,40 +173,119 @@ def apply_titlebar_theme(window):
 # 보다 굵어 보여서 같은 명도 대비를 쓰면 더 진하게 느껴진다 — 그래서
 # 보조 텍스트·구분선 쪽은 macOS 원본보다 살짝 연하게 조정했다.
 # 보고서(WACC 시트)와 같은 남색·하늘색 팔레트
-WINDOW_BG = "#EEF2F8"        # 창 바깥 배경
-PANEL_BG = "#F7F9FC"         # 패널 표면
-SURFACE = "#FFFFFF"          # 콘텐츠/표 표면
-BORDER = "#D6DEEA"           # 헤어라인 테두리·구분선
-TEXT_PRIMARY = "#1B2A41"     # 본문 텍스트(짙은 남색)
-TEXT_SECONDARY = "#6B7A90"   # 보조·설명 텍스트
-ACCENT = "#1F3864"           # 강조색 — 보고서 헤더 남색
-ACCENT_HOVER = "#2C4C86"
-ACCENT_SOFT = "#8FA6C8"      # 세그먼트 비선택
-HEADER_FILL = "#C6D9F1"      # 표 헤더 하늘색(보고서와 동일)
-HEADER_TEXT = "#002060"
+WINDOW_BG = ("#F0F4F8", "#121B2A")
+PANEL_BG = ("#FFFFFF", "#1B283C")
+SURFACE = ("#FFFFFF", "#1B283C")
+SIDEBAR_BG = ("#FAFCFF", "#152235")
+BORDER = ("#DDE5EE", "#344358")
+TEXT_PRIMARY = ("#20324A", "#E5EDF8")
+TEXT_SECONDARY = ("#4A5A70", "#B8C8DC")
+ACCENT = ("#315F9B", "#8AB7ED")
+ACCENT_HOVER = ("#284F83", "#A8C9EF")
+ACCENT_SOFT = ("#EAF1FB", "#2A3E58")
+HEADER_FILL = ("#F0F4F8", "#152235")
+HEADER_TEXT = TEXT_PRIMARY
+BUTTON_TEXT = ("#FFFFFF", "#101E31")
+DISABLED_FILL = ("#E4EAF1", "#2D3B50")
+DISABLED_TEXT = ("#3A4C63", "#D5E2F4")
 SELECTION_FILL = ACCENT
-SELECTION_TEXT = "#FFFFFF"
-ROW_STRIPE = "#F4F7FB"       # 표 줄무늬
-NEGATIVE = "#D64545"         # 음수·경고
+SELECTION_TEXT = BUTTON_TEXT
+ROW_STRIPE = ("#F7F9FC", "#1E2D43")
+RECOMMENDED_FILL = ("#EDF3FC", "#263B54")
+FOUND_FILL = ("#DBE9FC", "#365779")
+NEGATIVE = ("#BD3549", "#FF9EAC")
+
+
+class Button(ctk.CTkButton):
+    """비활성 상태도 읽을 수 있는 중립 배경으로 표시하는 앱 공통 버튼."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled_fill = self.cget("fg_color")
+        if self.cget("state") == "disabled":
+            self.configure(state="disabled")
+
+    def configure(self, require_redraw=False, **kwargs):
+        if hasattr(self, "_enabled_fill"):
+            if "fg_color" in kwargs:
+                self._enabled_fill = kwargs["fg_color"]
+            state = kwargs.get("state", self.cget("state"))
+            if state == "disabled":
+                kwargs.update(fg_color=DISABLED_FILL, text_color_disabled=DISABLED_TEXT)
+            elif "state" in kwargs:
+                kwargs.setdefault("fg_color", self._enabled_fill)
+        super().configure(require_redraw=require_redraw, **kwargs)
+
+
+def color(value):
+    """CTk light/dark 색 쌍을 네이티브 Tk가 받는 단일 색으로 변환."""
+    return value[ctk.get_appearance_mode().lower() == "dark"] if isinstance(value, (tuple, list)) else value
+
+
+def native_colors(widget, **options):
+    widget._peer_theme_colors = options
+    widget.configure(**{key: color(value) for key, value in options.items()})
+    return widget
+
+
+def listbox_style():
+    return {"bg": color(SURFACE), "fg": color(TEXT_PRIMARY),
+            "selectbackground": color(SELECTION_FILL), "selectforeground": color(SELECTION_TEXT),
+            "activestyle": "none", "relief": "flat", "borderwidth": 0,
+            "highlightthickness": 1, "highlightbackground": color(BORDER),
+            "highlightcolor": color(BORDER), "font": (FONT_FAMILY, 10), "exportselection": False}
+
+
+def style_tree(style_name):
+    style = ttk.Style()
+    style.theme_use("clam")
+    style.configure(style_name, font=(FONT_FAMILY, 10), rowheight=34, borderwidth=0,
+                    foreground=color(TEXT_PRIMARY), background=color(SURFACE), fieldbackground=color(SURFACE),
+                    lightcolor=color(SURFACE), darkcolor=color(SURFACE), bordercolor=color(BORDER))
+    style.configure(style_name + ".Heading", font=(FONT_FAMILY, 11, "bold"), background=color(HEADER_FILL),
+                    foreground=color(HEADER_TEXT), relief="flat", padding=(8, 10), borderwidth=0)
+    style.map(style_name + ".Heading", background=[("active", color(HEADER_FILL))])
+    style.map(style_name, background=[("selected", color(FOUND_FILL))],
+              foreground=[("selected", color(TEXT_PRIMARY))])
+
+
+def refresh_native_widgets(root):
+    """화면을 다시 만들지 않고 네이티브 목록·표·상세 창의 색만 갱신한다."""
+    style_tree("Cand.Treeview")
+    style_tree("Sum.Treeview")
+    _ensure_scrollbar_style()
+    style = ttk.Style()
+    style.configure("TCombobox", fieldbackground=color(SURFACE), background=color(HEADER_FILL),
+                    foreground=color(TEXT_PRIMARY), arrowcolor=color(TEXT_SECONDARY), bordercolor=color(BORDER),
+                    lightcolor=color(BORDER), darkcolor=color(BORDER))
+    style.map("TCombobox", fieldbackground=[("readonly", color(SURFACE))],
+              foreground=[("readonly", color(TEXT_PRIMARY))],
+              selectbackground=[("focus", color(FOUND_FILL))], selectforeground=[("focus", color(TEXT_PRIMARY))])
+    for option, value in (("background", SURFACE), ("foreground", TEXT_PRIMARY),
+                          ("selectBackground", FOUND_FILL), ("selectForeground", TEXT_PRIMARY)):
+        root.option_add("*TCombobox*Listbox." + option, color(value))
+    def visit(widget):
+        if hasattr(widget, "_peer_theme_colors"):
+            widget.configure(**{k: color(v) for k, v in widget._peer_theme_colors.items()})
+        if isinstance(widget, tk.Listbox):
+            widget.configure(**listbox_style())
+        if isinstance(widget, ttk.Treeview):
+            widget.tag_configure("odd", background=color(ROW_STRIPE))
+            widget.tag_configure("excluded", foreground=color(TEXT_SECONDARY))
+            widget.tag_configure("out", foreground=color(TEXT_SECONDARY))
+            widget.tag_configure("flag", foreground=color(NEGATIVE))
+            widget.tag_configure("rec", background=color(RECOMMENDED_FILL))
+            widget.tag_configure("found", background=color(FOUND_FILL))
+        if isinstance(widget, (ctk.CTk, ctk.CTkToplevel)):
+            apply_titlebar_theme(widget)
+        for child in widget.winfo_children():
+            visit(child)
+    visit(root)
 
 
 # tk.Listbox는 customtkinter가 감싸주지 않아 색을 직접 맞춘다. highlightthickness
 # 로 얇은 테두리를 둘러 흰 바탕 카드 위에서도 목록 영역 경계가 보이게 한다
 # (카드와 목록이 둘 다 SURFACE 흰색이라 테두리가 없으면 서로 묻힌다).
-LISTBOX_STYLE = {
-    "bg": SURFACE,
-    "fg": TEXT_PRIMARY,
-    "selectbackground": SELECTION_FILL,
-    "selectforeground": SELECTION_TEXT,
-    "activestyle": "none",
-    "relief": "flat",
-    "borderwidth": 0,
-    "highlightthickness": 1,
-    "highlightbackground": BORDER,
-    "highlightcolor": BORDER,
-    "font": (FONT_FAMILY_MONO, 10),
-    "exportselection": False,
-}
+LISTBOX_STYLE = listbox_style()
 
 
 # ── 표 데이터 셀: 왜 CTkLabel이 아니라 tk.Label인가 ────────────────────────
@@ -233,7 +325,7 @@ TABLE_CELL_FONT = ("Segoe UI", -13, "normal roman  ")
 # text_color를 지정하지 않는 셀(예: capital.py의 발행일·발행형태 칸)은
 # TEXT_PRIMARY 같은 임의값이 아니라 이 tk 색이름이어야 CTkLabel과 색이
 # 정확히 같아진다(cget()으로 실측).
-TABLE_CELL_DEFAULT_FG = "gray10"
+TABLE_CELL_DEFAULT_FG = TEXT_PRIMARY
 
 # (예전엔 여기에 TABLE_CELL_BG_TRANSPARENT_SCROLL / TABLE_CELL_BG_DEFAULT_SCROLL
 # 두 상수가 있었다 — CTkScrollableFrame을 만드는 방식(fg_color="transparent"로
@@ -269,7 +361,7 @@ def table_cell(parent, text, *, bg, fg=TABLE_CELL_DEFAULT_FG, anchor="w", **grid
         pady = pady if isinstance(pady, int) else max(pady)
         parent.grid_rowconfigure(row, minsize=TABLE_ROW_MINSIZE + 2 * pady)
     lbl = tk.Label(
-        parent, text=text, bg=bg, fg=fg, font=TABLE_CELL_FONT,
+        parent, text=text, bg=color(bg), fg=color(fg), font=TABLE_CELL_FONT,
         anchor=anchor, bd=0, highlightthickness=0, padx=0, pady=0,
     )
     # sticky="ew"(기본값)로 열이 grid_columnconfigure(weight=...)를 받아
@@ -278,6 +370,7 @@ def table_cell(parent, text, *, bg, fg=TABLE_CELL_DEFAULT_FG, anchor="w", **grid
     # 글자 위치는 anchor가 그대로 맡는다(가운데 문자열이 아니라 왼쪽/오른쪽
     # 정렬 그대로). 호출측이 sticky를 직접 넘기면 그 값이 우선한다.
     grid_kwargs.setdefault("sticky", "ew")
+    native_colors(lbl, bg=bg, fg=fg)
     lbl.grid(**grid_kwargs)
     return lbl
 
@@ -373,16 +466,20 @@ def _ensure_scrollbar_style():
     (grep으로 확인) 전역 ttk 테마를 바꿔도 다른 위젯에 영향이 없다.
     """
     global _scrollbar_style_ready
-    if _scrollbar_style_ready:
-        return
     style = ttk.Style()
     style.theme_use("clam")
     style.configure(
         _SCROLLBAR_STYLE,
-        background=BORDER, troughcolor=SURFACE, bordercolor=SURFACE,
-        arrowcolor=TEXT_SECONDARY, relief="flat", arrowsize=13, width=12,
+        background=color(BORDER), troughcolor=color(SURFACE), bordercolor=color(SURFACE),
+        arrowcolor=color(TEXT_SECONDARY), relief="flat", arrowsize=13, width=12,
     )
-    style.map(_SCROLLBAR_STYLE, background=[("active", TEXT_SECONDARY)])
+    style.map(_SCROLLBAR_STYLE, background=[("active", color(TEXT_SECONDARY))])
+    for name in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
+        style.configure(name, background=color(BORDER), troughcolor=color(SURFACE),
+                        bordercolor=color(SURFACE), arrowcolor=color(TEXT_SECONDARY),
+                        lightcolor=color(BORDER), darkcolor=color(BORDER))
+        style.map(name, background=[("active", color(TEXT_SECONDARY)), ("!active", color(BORDER))],
+                  arrowcolor=[("disabled", color(TEXT_SECONDARY))])
     _scrollbar_style_ready = True
 
 
@@ -412,11 +509,13 @@ class ScrollFrame(tk.Frame):
     def __init__(self, parent, bg=SURFACE, **kwargs):
         _ensure_scrollbar_style()
 
-        self._outer = tk.Frame(parent, bg=bg, highlightthickness=0, bd=0)
+        self._outer = tk.Frame(parent, bg=color(bg), highlightthickness=0, bd=0)
+        native_colors(self._outer, bg=bg)
         self._outer.grid_columnconfigure(0, weight=1)
         self._outer.grid_rowconfigure(0, weight=1)
 
-        self._canvas = tk.Canvas(self._outer, bg=bg, highlightthickness=0, bd=0)
+        self._canvas = tk.Canvas(self._outer, bg=color(bg), highlightthickness=0, bd=0)
+        native_colors(self._canvas, bg=bg)
         self._canvas.grid(row=0, column=0, sticky="nsew")
 
         self._vbar = ttk.Scrollbar(
@@ -435,8 +534,9 @@ class ScrollFrame(tk.Frame):
         self._hbar_visible = False
         self._canvas.configure(xscrollcommand=self._hbar.set)
 
-        kwargs.setdefault("bg", bg)
+        kwargs.setdefault("bg", color(bg))
         super().__init__(self._canvas, **kwargs)
+        native_colors(self, bg=bg)
         self._window_id = self._canvas.create_window((0, 0), window=self, anchor="nw")
 
         self.bind("<Configure>", self._on_inner_configure)

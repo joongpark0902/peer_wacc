@@ -9,3 +9,5 @@ __pycache__/
 *.xlsx
 !tests/fixtures/*.xlsx
 docs/superpowers/
+ui-preferences.json
+backup_*_ui-preferences.json

@@ -1,0 +1,628 @@
+{
+  "source_file": "WACC피어_삼성전자_2026-06-30.xlsx",
+  "source_sha256": "636cd5a58825512533928804d2e6af558613f1f7ca041383f3dfd2635cf0ee64",
+  "captured_at_utc": "2026-10-29T03:28:00.611747+00:00",
+  "method": "Microsoft Excel Range.CopyPicture(xlScreen, xlBitmap); native tiles stitched vertically",
+  "source_opened_read_only": true,
+  "source_saved": false,
+  "recalculation": "disabled; source cached results preserved",
+  "gridlines": "hidden only in the private unsaved Excel session",
+  "presentation_only": "Column widths, wrapping, row heights and empty note-cell spans adjusted in memory for readability; source values/formulas preserved",
+  "sheets": [
+    {
+      "sheet": "요약",
+      "range": "A1:B19",
+      "source_dimensions": "A1:B19",
+      "visible_columns": [
+        "A",
+        "B"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [
+        {
+          "range": "A13:B13",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 38.0
+        },
+        {
+          "range": "A14:B14",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 54.0
+        },
+        {
+          "range": "A15:B15",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 38.0
+        },
+        {
+          "range": "A16:B16",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 54.0
+        },
+        {
+          "range": "A17:B17",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 22.0
+        },
+        {
+          "range": "A18:B18",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 22.0
+        },
+        {
+          "range": "A19:B19",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 54.0
+        }
+      ],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:B19",
+          "width_px": 657,
+          "height_px": 643
+        }
+      ],
+      "image": {
+        "file": "01_summary.png",
+        "width_px": 657,
+        "height_px": 643,
+        "sha256": "10b9fba34ec0eeffa7474e28b2193a1971fc2fe68207699be57a0ba0c55f7799"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": []
+    },
+    {
+      "sheet": "WACC",
+      "range": "A1:N29",
+      "source_dimensions": "A1:N29",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [
+        {
+          "range": "B2:N2",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 22.0
+        },
+        {
+          "range": "B29:N29",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 31.75
+        },
+        {
+          "range": "D14:D27",
+          "wrap_text": true,
+          "row_heights": "expanded for full explanatory text"
+        }
+      ],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:N29",
+          "width_px": 1377,
+          "height_px": 878
+        }
+      ],
+      "image": {
+        "file": "02_wacc.png",
+        "width_px": 1377,
+        "height_px": 878,
+        "sha256": "092577b297c39f59bf5b188a6eeb42fc54c1e811a1d9001682ead9f604f2792e"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": []
+    },
+    {
+      "sheet": "후보군",
+      "range": "A1:R555",
+      "source_dimensions": "A1:R555",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [
+        {
+          "range": "A:R",
+          "minimum_column_width": 12,
+          "reason": "Reserve space for table filter buttons and complete header labels"
+        },
+        {
+          "range": "A1:R555",
+          "wrap_text": true,
+          "rows_autofit": true
+        }
+      ],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:R35",
+          "width_px": 2317,
+          "height_px": 1295
+        },
+        {
+          "range": "A36:R70",
+          "width_px": 2317,
+          "height_px": 1041
+        },
+        {
+          "range": "A71:R105",
+          "width_px": 2317,
+          "height_px": 972
+        },
+        {
+          "range": "A106:R140",
+          "width_px": 2317,
+          "height_px": 1047
+        },
+        {
+          "range": "A141:R175",
+          "width_px": 2317,
+          "height_px": 1143
+        },
+        {
+          "range": "A176:R210",
+          "width_px": 2317,
+          "height_px": 939
+        },
+        {
+          "range": "A211:R245",
+          "width_px": 2317,
+          "height_px": 861
+        },
+        {
+          "range": "A246:R280",
+          "width_px": 2317,
+          "height_px": 864
+        },
+        {
+          "range": "A281:R315",
+          "width_px": 2317,
+          "height_px": 861
+        },
+        {
+          "range": "A316:R350",
+          "width_px": 2317,
+          "height_px": 849
+        },
+        {
+          "range": "A351:R385",
+          "width_px": 2317,
+          "height_px": 861
+        },
+        {
+          "range": "A386:R420",
+          "width_px": 2317,
+          "height_px": 876
+        },
+        {
+          "range": "A421:R455",
+          "width_px": 2317,
+          "height_px": 846
+        },
+        {
+          "range": "A456:R490",
+          "width_px": 2317,
+          "height_px": 1101
+        },
+        {
+          "range": "A491:R525",
+          "width_px": 2317,
+          "height_px": 1230
+        },
+        {
+          "range": "A526:R555",
+          "width_px": 2317,
+          "height_px": 1129
+        }
+      ],
+      "image": {
+        "file": "03_candidates.png",
+        "width_px": 2317,
+        "height_px": 15915,
+        "sha256": "5db6721c6ed7303d4a02218363e3546b6572e0dce03ddb854d40fa4266ceab70"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": [],
+      "preview": {
+        "range": "A1:R25",
+        "file": "03_candidates_preview.png",
+        "width_px": 2317,
+        "height_px": 979,
+        "sha256": "30c4808b73327601f36bcaabb9bd03be7f00004b10ebb1386763c176c45c0615"
+      }
+    },
+    {
+      "sheet": "피어",
+      "range": "A1:AG6",
+      "source_dimensions": "A1:AG6",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+        "AA",
+        "AB",
+        "AC",
+        "AD",
+        "AE",
+        "AF",
+        "AG"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [
+        {
+          "range": "A1:AG6",
+          "columns_autofit": true,
+          "column_width_overrides": {
+            "Z": 36,
+            "AE": 52
+          },
+          "wrap_text": true,
+          "rows_autofit": true,
+          "header_min_height_points": 45
+        }
+      ],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:AG6",
+          "width_px": 3419,
+          "height_px": 186
+        }
+      ],
+      "image": {
+        "file": "04_peers.png",
+        "width_px": 3419,
+        "height_px": 186,
+        "sha256": "7a25b71884cfcf7df12e12f84ca4f4b5380b9a9d80f68d2c4b1c8f922e73ee87"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": []
+    },
+    {
+      "sheet": "이자부부채 산정내역",
+      "range": "A1:G109",
+      "source_dimensions": "A1:I109",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G"
+      ],
+      "excluded_hidden_columns": [
+        "H",
+        "I"
+      ],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [
+        {
+          "range": "B2:G2",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 35.0
+        },
+        {
+          "range": "B3:G3",
+          "merge_empty_note_span": true,
+          "wrap_text": true,
+          "row_height_points": 35.0
+        }
+      ],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:G35",
+          "width_px": 1185,
+          "height_px": 824
+        },
+        {
+          "range": "A36:G70",
+          "width_px": 1185,
+          "height_px": 771
+        },
+        {
+          "range": "A71:G105",
+          "width_px": 1185,
+          "height_px": 771
+        },
+        {
+          "range": "A106:G109",
+          "width_px": 1185,
+          "height_px": 89
+        }
+      ],
+      "image": {
+        "file": "05_interest_bearing_debt.png",
+        "width_px": 1185,
+        "height_px": 2455,
+        "sha256": "b736749d78a21401872b7158696c39839ec460de528bd2a7f8768818fc6410d5"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": [],
+      "preview": {
+        "range": "A1:G25",
+        "file": "05_interest_bearing_debt_preview.png",
+        "width_px": 1185,
+        "height_px": 604,
+        "sha256": "93f394f4906baa9c9d2e05af20af8527b590b49e731fd4e3db6ed9e43f741b98"
+      }
+    },
+    {
+      "sheet": "주가",
+      "range": "A1:N106",
+      "source_dimensions": "A1:N106",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:N35",
+          "width_px": 1009,
+          "height_px": 785
+        },
+        {
+          "range": "A36:N70",
+          "width_px": 1009,
+          "height_px": 771
+        },
+        {
+          "range": "A71:N105",
+          "width_px": 1009,
+          "height_px": 771
+        },
+        {
+          "range": "A106:N106",
+          "width_px": 1009,
+          "height_px": 23
+        }
+      ],
+      "image": {
+        "file": "06_prices.png",
+        "width_px": 1009,
+        "height_px": 2350,
+        "sha256": "09cce03f0ae0c8b068e53a36151aa714b9db2794011d0cbe5a0235e0a91d078b"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": [],
+      "preview": {
+        "range": "A1:N25",
+        "file": "06_prices_preview.png",
+        "width_px": 1009,
+        "height_px": 565,
+        "sha256": "bdb83c7c5f2a6952bf3c4c23486b6f835ca2e15cbbdd88027ebc7bd431cb408b"
+      }
+    },
+    {
+      "sheet": "베타",
+      "range": "A1:M6",
+      "source_dimensions": "A1:M6",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:M6",
+          "width_px": 1097,
+          "height_px": 147
+        }
+      ],
+      "image": {
+        "file": "07_beta.png",
+        "width_px": 1097,
+        "height_px": 147,
+        "sha256": "46c4fdf64701b124609ebaa858d7a3342278cb93bef1975262677827b07fe7e2"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": [
+        "G2",
+        "M2",
+        "G3",
+        "M3",
+        "G4",
+        "M4",
+        "G5",
+        "M5",
+        "G6",
+        "M6"
+      ]
+    },
+    {
+      "sheet": "목표DE",
+      "range": "A1:D6",
+      "source_dimensions": "A1:D6",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:D6",
+          "width_px": 409,
+          "height_px": 133
+        }
+      ],
+      "image": {
+        "file": "08_target_de.png",
+        "width_px": 409,
+        "height_px": 133,
+        "sha256": "c296a35d2cfba8a2a5c93ce5976e088e83ae6f727faa1216c89a558c00d4b545"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": []
+    },
+    {
+      "sheet": "금투협",
+      "range": "A1:S70",
+      "source_dimensions": "A1:S70",
+      "visible_columns": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "O",
+        "P",
+        "Q",
+        "R",
+        "S"
+      ],
+      "excluded_hidden_columns": [],
+      "hidden_rows": [],
+      "unsaved_presentation_adjustments": [
+        {
+          "range": "A1:S70",
+          "wrap_text": true,
+          "rows_autofit": true
+        }
+      ],
+      "cell_values_and_formulas_unchanged": true,
+      "tiles": [
+        {
+          "range": "A1:S35",
+          "width_px": 1409,
+          "height_px": 1024
+        },
+        {
+          "range": "A36:S70",
+          "width_px": 1409,
+          "height_px": 816
+        }
+      ],
+      "image": {
+        "file": "09_kofia.png",
+        "width_px": 1409,
+        "height_px": 1840,
+        "sha256": "b8e2a485d82f1fca863f6f1d5d7ef93a6483d38ed5fad76c70229ce04c0fef95"
+      },
+      "source_cached_errors": [],
+      "formula_cells_without_cached_values": [],
+      "preview": {
+        "range": "A1:S25",
+        "file": "09_kofia_preview.png",
+        "width_px": 1409,
+        "height_px": 684,
+        "sha256": "e4677dea1a985c56e122abb656a9e5f1dbd55fb121348870f762edba16d1cceb"
+      }
+    }
+  ],
+  "source_sha256_after": "636cd5a58825512533928804d2e6af558613f1f7ca041383f3dfd2635cf0ee64",
+  "source_unchanged": true
+}

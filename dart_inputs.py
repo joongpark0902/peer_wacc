@@ -10,10 +10,11 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+import threading
 
 import requests
 
-from settings import APP_DIR, CACHE_DIR
+from settings import APP_DIR, CACHE_DIR, source_app_dir
 
 _BASE = "https://opendart.fss.or.kr/api/"
 _DOWNLOADER_CORPCODE = os.path.join(os.path.dirname(APP_DIR), "dart_downloader", "CORPCODE.xml")
@@ -57,6 +58,7 @@ def _get(api_key, endpoint, **params):
 # ── 회사코드 맵 ─────────────────────────────────────────────────────────────
 
 _CORP_MAP_CACHE = {}
+_CORP_MAP_LOCK = threading.Lock()
 
 
 def load_corp_map(api_key=None):
@@ -64,9 +66,19 @@ def load_corp_map(api_key=None):
     30MB XML 파싱이라 프로세스 안에서 한 번만 한다."""
     if "map" in _CORP_MAP_CACHE:
         return _CORP_MAP_CACHE["map"]
-    path = _DOWNLOADER_CORPCODE
-    if not os.path.exists(path):
-        path = os.path.join(CACHE_DIR, "CORPCODE.xml")
+    with _CORP_MAP_LOCK:
+        if "map" in _CORP_MAP_CACHE:
+            return _CORP_MAP_CACHE["map"]
+        return _load_corp_map_once(api_key)
+
+
+def _load_corp_map_once(api_key):
+    original = source_app_dir()
+    paths = [os.path.join(CACHE_DIR, "CORPCODE.xml"), _DOWNLOADER_CORPCODE,
+             os.path.join(original, "cache", "CORPCODE.xml"),
+             os.path.join(os.path.dirname(original), "dart_downloader", "CORPCODE.xml")]
+    path = next((p for p in paths if os.path.isfile(p)), paths[0])
+    if not os.path.isfile(path):
         if not os.path.exists(path):
             os.makedirs(CACHE_DIR, exist_ok=True)
             r = requests.get(_BASE + "corpCode.xml", params={"crtfc_key": api_key}, timeout=60)

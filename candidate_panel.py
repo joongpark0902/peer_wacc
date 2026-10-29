@@ -6,6 +6,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 import tkinter.ttk as ttk
+import tkinter.font as tkfont
 from tkinter import filedialog
 
 import customtkinter as ctk
@@ -40,52 +41,61 @@ class CandidatePanel:
     def __init__(self, parent, app):
         self.app = app
         self.frame = ctk.CTkFrame(parent, fg_color=ui_theme.PANEL_BG, border_width=1, border_color=ui_theme.BORDER)
-        self.frame.grid_columnconfigure(0, weight=1)
-        self.frame.grid_rowconfigure(3, weight=1)
+        self.frame.grid_columnconfigure(1, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
+        self.sidebar = ctk.CTkScrollableFrame(self.frame, width=286, fg_color=ui_theme.SIDEBAR_BG,
+                                               corner_radius=0)
+        self.sidebar.grid(row=0, column=0, sticky="nsew", padx=(1, 0), pady=1)
+        self.sidebar.grid_columnconfigure(0, weight=1)
+        self.results = ctk.CTkFrame(self.frame, fg_color="transparent")
+        self.results.grid(row=0, column=1, sticky="nsew", padx=(12, 14), pady=(12, 0))
+        self.results.grid_columnconfigure(0, weight=1)
+        self.results.grid_rowconfigure(3, weight=1)
         self.rows_state = {}                 # code -> {"sel": BooleanVar, "exc": BooleanVar, "reason": StringVar}
         self._found, self._addable = [], []  # 표에서 찾기: 매치된 종목코드 / 추가 가능 KIND 행
-        self._build_target(self.frame)
-        self._build_filters(self.frame)
-        self._build_search(self.frame)
-        self._build_table(self.frame)
-        self._build_bottom(self.frame)
+        self._build_target(self.sidebar)
+        self._build_filters(self.sidebar)
+        self._build_search(self.results)
+        self._build_table(self.results)
+        self._build_bottom(self.results)
 
     # ── 대상 ────────────────────────────────────────────────────────────
     def _build_target(self, parent):
         f = ctk.CTkFrame(parent, fg_color="transparent")
-        f.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
-        f.grid_columnconfigure(1, weight=1)
-        ctk.CTkLabel(f, text="대상기업", font=ctk.CTkFont(size=15, weight="bold"), text_color=ui_theme.ACCENT).grid(row=0, column=0, sticky="w")
-        self.listed_seg = ctk.CTkSegmentedButton(f, values=["상장", "비상장"], command=self._on_listed_toggle, width=140)
+        f.grid(row=0, column=0, sticky="ew", padx=12, pady=(12, 4))
+        f.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(f, text="분석 대상", font=ctk.CTkFont(size=16, weight="bold"), text_color=ui_theme.TEXT_PRIMARY).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        self.listed_seg = ctk.CTkSegmentedButton(f, values=["상장", "비상장"], command=self._on_listed_toggle, width=240)
         self.listed_seg.set("상장")
-        self.listed_seg.grid(row=0, column=2, sticky="e")
+        self.listed_seg.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 8))
 
         self.name_var = tk.StringVar()
-        ctk.CTkLabel(f, text="회사명").grid(row=1, column=0, sticky="w", pady=2)
+        ctk.CTkLabel(f, text="회사명", text_color=TEXT_SECONDARY).grid(row=2, column=0, sticky="w", pady=(2, 3))
         e = ctk.CTkEntry(f, textvariable=self.name_var)
-        e.grid(row=1, column=1, sticky="ew", padx=6)
+        e.grid(row=3, column=0, sticky="ew", padx=(0, 6))
         e.bind("<Return>", lambda _e: self._find_target() if self.listed_seg.get() == "상장" else None)
-        self.find_btn = ctk.CTkButton(f, text="찾기", width=70, command=self._find_target)
-        self.find_btn.grid(row=1, column=2)
+        self.find_btn = ui_theme.Button(f, text="찾기", width=54, command=self._find_target)
+        self.find_btn.grid(row=3, column=1)
 
-        self.match_box = tk.Listbox(f, height=4, **ui_theme.LISTBOX_STYLE)
-        self.match_box.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(2, 2))
+        self.match_box = tk.Listbox(f, height=3, width=24, **ui_theme.listbox_style())
+        self.match_box.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(6, 2))
+        self.match_box.grid_remove()
         self.match_box.bind("<<ListboxSelect>>", self._on_pick_target)
         self._matches = []
 
-        ctk.CTkLabel(f, text="업종").grid(row=3, column=0, sticky="w", pady=2)
+        ctk.CTkLabel(f, text="업종", text_color=TEXT_SECONDARY).grid(row=5, column=0, sticky="w", pady=(8, 3))
         self.industry_var = tk.StringVar()
         self._industries = []
-        ie = ctk.CTkEntry(f, textvariable=self.industry_var, placeholder_text="업종명 일부 입력 → 아래 목록에서 선택 (예: 소 → 소프트웨어 개발 및 공급업)")
-        ie.grid(row=3, column=1, columnspan=2, sticky="ew", padx=6)
+        ie = ctk.CTkEntry(f, textvariable=self.industry_var, placeholder_text="업종 입력 후 목록에서 선택")
+        ie.grid(row=6, column=0, columnspan=2, sticky="ew")
         ie.bind("<KeyRelease>", self._on_industry_typed)
-        self.industry_box = tk.Listbox(f, height=5, **ui_theme.LISTBOX_STYLE)
-        self.industry_box.grid(row=5, column=0, columnspan=3, sticky="ew", pady=(2, 2))
+        self.industry_box = tk.Listbox(f, height=5, width=24, **ui_theme.listbox_style())
+        self.industry_box.grid(row=7, column=0, columnspan=2, sticky="ew", pady=(2, 2))
         self.industry_box.bind("<<ListboxSelect>>", self._on_pick_industry)
         self.industry_box.grid_remove()          # 입력 전엔 숨김
 
-        self.target_info = ctk.CTkLabel(f, text="", text_color=TEXT_SECONDARY, anchor="w", justify="left")
-        self.target_info.grid(row=4, column=0, columnspan=3, sticky="ew")
+        self.target_info = ctk.CTkLabel(f, text="", text_color=TEXT_SECONDARY, anchor="w", justify="left", wraplength=245)
+        self.target_info.grid(row=8, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
     def _on_industry_typed(self, _e=None):
         q = self.industry_var.get().strip().lower()
@@ -126,6 +136,10 @@ class CandidatePanel:
         self.match_box.delete(0, "end")
         for r in self._matches:
             self.match_box.insert("end", f"{r['name']} ({r['code']}) · {r['industry']}")
+        if self._matches:
+            self.match_box.grid()
+        else:
+            self.match_box.grid_remove()
         if not self._matches:
             self.target_info.configure(text="일치하는 상장사가 없습니다 (비상장이면 상단에서 '비상장' 선택)")
 
@@ -138,6 +152,7 @@ class CandidatePanel:
         t.update({"name": r["name"], "listed": True, "code": r["code"], "industry": r["industry"], "ksic": ""})
         self.name_var.set(r["name"])
         self.industry_var.set(r["industry"])
+        self.match_box.grid_remove()
         if not self.kw_var.get().strip():
             self.kw_var.set(keywords_from_products(r["products"]))
         self.target_info.configure(text=f"주요제품: {r['products']} · 상장 {r['listed']} · KSIC 조회 중…")
@@ -161,78 +176,103 @@ class CandidatePanel:
     # ── 기준일·키워드·필터 ───────────────────────────────────────────────
     def _build_filters(self, parent):
         f = ctk.CTkFrame(parent, fg_color="transparent")
-        f.grid(row=1, column=0, sticky="ew", padx=10, pady=4)
-        f.grid_columnconfigure(1, weight=1)
-        ctk.CTkLabel(f, text="기준일").grid(row=0, column=0, sticky="w")
+        f.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 16))
+        f.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(f, text="평가 기준일", text_color=TEXT_SECONDARY).grid(row=0, column=0, sticky="w", pady=(4, 3))
         self.as_of_var = tk.StringVar(value=default_as_of())
-        af = ctk.CTkFrame(f, fg_color="transparent")
-        af.grid(row=0, column=1, columnspan=2, sticky="w")
-        ae = ctk.CTkEntry(af, textvariable=self.as_of_var, width=110)
-        ae.grid(row=0, column=0, padx=6)
+        ae = ctk.CTkEntry(f, textvariable=self.as_of_var)
+        ae.grid(row=1, column=0, sticky="ew")
         ae.bind("<FocusOut>", lambda _e: self._on_as_of_changed())
         ae.bind("<Return>", lambda _e: self._on_as_of_changed())
-        ctk.CTkLabel(af, text="재무 기준일").grid(row=0, column=1, padx=(12, 4))
+        ctk.CTkLabel(f, text="재무 기준일", text_color=TEXT_SECONDARY).grid(row=2, column=0, sticky="w", pady=(10, 3))
         # 주가·금리는 기준일, 재무제표만 지정 분기말 이하 최신 보고서로 — 반기 미공시 기간 등에 피어 재무 시점을 통일
-        self.fs_seg = ctk.CTkSegmentedButton(af, values=["자동", "3월말", "6월말", "9월말", "12월말"], width=280)
+        self.fs_seg = ctk.CTkSegmentedButton(f, values=["자동", "3월말", "6월말", "9월말", "12월말"], width=250, font=ctk.CTkFont(size=11))
         self.fs_seg.set("자동")
-        self.fs_seg.grid(row=0, column=2)
-        ctk.CTkLabel(f, text="키워드(쉼표 구분)").grid(row=1, column=0, sticky="w", pady=2)
+        self.fs_seg.grid(row=3, column=0, sticky="ew")
+        ctk.CTkLabel(f, text="검색 조건", font=ctk.CTkFont(size=15, weight="bold")).grid(row=4, column=0, sticky="w", pady=(22, 6))
+        ctk.CTkLabel(f, text="포함 키워드 · 쉼표 구분", text_color=TEXT_SECONDARY).grid(row=5, column=0, sticky="w", pady=(0, 3))
         self.kw_var = tk.StringVar()
-        e = ctk.CTkEntry(f, textvariable=self.kw_var)
-        e.grid(row=1, column=1, columnspan=2, sticky="ew", padx=6)
+        e = ctk.CTkEntry(f, textvariable=self.kw_var, placeholder_text="제품, 업종 등")
+        e.grid(row=6, column=0, sticky="ew")
         e.bind("<Return>", lambda _e: self.search())
-        ctk.CTkLabel(f, text="제외 키워드").grid(row=2, column=0, sticky="w", pady=2)
-        self.neg_var = tk.StringVar(value=ps.DEFAULT_EXCLUDE_KEYWORDS)
-        ctk.CTkEntry(f, textvariable=self.neg_var, placeholder_text="사명·주요제품에 있으면 감점 (-5/개)").grid(row=2, column=1, columnspan=2, sticky="ew", padx=6)
-        k = ctk.CTkFrame(f, fg_color="transparent")
-        k.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(2, 0))
-        ctk.CTkLabel(k, text="KSIC 코드군(선택)").grid(row=0, column=0, sticky="w")
-        self.ksic_var = tk.StringVar()
-        ctk.CTkEntry(k, textvariable=self.ksic_var, width=300, placeholder_text="예: C29299, C29177, C25100 — 앞4자리 +2, 앞3자리 +1").grid(row=0, column=1, padx=6)
-        ctk.CTkLabel(k, text="대상 시총(억, 선택)").grid(row=0, column=2, padx=(12, 0))
-        self.target_cap_var = tk.StringVar()
-        ctk.CTkEntry(k, textvariable=self.target_cap_var, width=90, placeholder_text="0.2x~5x +2").grid(row=0, column=3, padx=6)
-        ctk.CTkLabel(k, text="대상 매출(억, 선택)").grid(row=0, column=4, padx=(12, 0))
-        self.target_sales_var = tk.StringVar()
-        ctk.CTkEntry(k, textvariable=self.target_sales_var, width=90, placeholder_text="정밀 추천용").grid(row=0, column=5, padx=6)
-
-        g = ctk.CTkFrame(f, fg_color="transparent")
-        g.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(4, 0))
+        markets = ctk.CTkFrame(f, fg_color="transparent")
+        markets.grid(row=7, column=0, sticky="ew", pady=(14, 6))
         self.mk_kospi = tk.BooleanVar(value=True)
         self.mk_kosdaq = tk.BooleanVar(value=True)
-        ctk.CTkCheckBox(g, text="유가", variable=self.mk_kospi, width=60).grid(row=0, column=0, padx=(0, 6))
-        ctk.CTkCheckBox(g, text="코스닥", variable=self.mk_kosdaq, width=70).grid(row=0, column=1, padx=6)
-        ctk.CTkLabel(g, text="시총(억)").grid(row=0, column=2, padx=(12, 2))
+        ctk.CTkCheckBox(markets, text="유가", variable=self.mk_kospi, width=80).grid(row=0, column=0)
+        ctk.CTkCheckBox(markets, text="코스닥", variable=self.mk_kosdaq, width=90).grid(row=0, column=1, padx=(14, 0))
+        self.advanced_btn = ui_theme.Button(f, text="세부 조건 펼치기  +", command=self._toggle_advanced,
+                                         fg_color=ui_theme.ACCENT_SOFT, text_color=ui_theme.TEXT_PRIMARY,
+                                         hover_color=ui_theme.FOUND_FILL, anchor="w")
+        self.advanced_btn.grid(row=8, column=0, sticky="ew", pady=(8, 0))
+        self.advanced_frame = g = ctk.CTkFrame(f, fg_color="transparent")
+        g.grid(row=9, column=0, sticky="ew", pady=(6, 0))
+        g.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(g, text="제외 키워드", text_color=TEXT_SECONDARY).grid(row=0, column=0, sticky="w")
+        self.neg_var = tk.StringVar(value=ps.DEFAULT_EXCLUDE_KEYWORDS)
+        ctk.CTkEntry(g, textvariable=self.neg_var).grid(row=1, column=0, sticky="ew")
+        self.ksic_var = tk.StringVar()
+        self.target_cap_var = tk.StringVar()
+        self.target_sales_var = tk.StringVar()
+        for row, label, var, placeholder in ((2, "KSIC 코드군", self.ksic_var, "예: C29299, C29177"),
+                                            (4, "대상 시총 (억원)", self.target_cap_var, "선택 입력"),
+                                            (6, "대상 매출 (억원)", self.target_sales_var, "정밀 추천용")):
+            ctk.CTkLabel(g, text=label, text_color=TEXT_SECONDARY).grid(row=row, column=0, sticky="w", pady=(8, 0))
+            ctk.CTkEntry(g, textvariable=var, placeholder_text=placeholder).grid(row=row+1, column=0, sticky="ew")
+        ctk.CTkLabel(g, text="후보 시총 범위 (억원)", text_color=TEXT_SECONDARY).grid(row=8, column=0, sticky="w", pady=(8, 0))
+        caps = ctk.CTkFrame(g, fg_color="transparent")
+        caps.grid(row=9, column=0, sticky="ew")
+        caps.grid_columnconfigure((0, 2), weight=1)
         self.cap_min = tk.StringVar(); self.cap_max = tk.StringVar()
-        ctk.CTkEntry(g, textvariable=self.cap_min, width=70, placeholder_text="하한").grid(row=0, column=3)
-        ctk.CTkLabel(g, text="~").grid(row=0, column=4, padx=2)
-        ctk.CTkEntry(g, textvariable=self.cap_max, width=70, placeholder_text="상한").grid(row=0, column=5)
+        ctk.CTkEntry(caps, textvariable=self.cap_min, width=100, placeholder_text="하한").grid(row=0, column=0, sticky="ew")
+        ctk.CTkLabel(caps, text="~").grid(row=0, column=1, padx=6)
+        ctk.CTkEntry(caps, textvariable=self.cap_max, width=100, placeholder_text="상한").grid(row=0, column=2, sticky="ew")
         self.listed_min = tk.BooleanVar(value=False)
-        ctk.CTkCheckBox(g, text="상장 2년 이상만", variable=self.listed_min).grid(row=0, column=6, padx=(12, 0))
-        self.search_btn = ctk.CTkButton(g, text="후보 검색", width=100, command=self.search)
-        self.search_btn.grid(row=0, column=7, padx=(12, 0))
-        self.precise_btn = ctk.CTkButton(g, text=f"정밀 추천(상위 {ps.PRECISE_TOP})", width=130,
-                                         command=self.precise_recommend, state="disabled")
-        self.precise_btn.grid(row=0, column=8, padx=(6, 0))
+        ctk.CTkCheckBox(g, text="상장 2년 이상만", variable=self.listed_min).grid(row=10, column=0, sticky="w", pady=(12, 2))
+        g.grid_remove()
+        self.search_btn = ui_theme.Button(f, text="후보 검색", height=36, command=self.search)
+        self.search_btn.grid(row=10, column=0, sticky="ew", pady=(16, 6))
+
+    def _toggle_advanced(self):
+        if self.advanced_frame.winfo_manager():
+            self.advanced_frame.grid_remove()
+            self.advanced_btn.configure(text="세부 조건 펼치기  +")
+        else:
+            self.advanced_frame.grid()
+            self.advanced_btn.configure(text="세부 조건 접기  −")
 
     # ── 표에서 찾기 (회사가 준 피어 리스트 붙여넣기 → 하이라이트·후보에 추가·일괄 선택) ─────
     def _build_search(self, parent):
+        title = ctk.CTkFrame(parent, fg_color="transparent")
+        title.grid(row=0, column=0, sticky="ew", padx=10, pady=(4, 0))
+        title.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(title, text="후보기업", font=ctk.CTkFont(size=22, weight="bold"), anchor="w").grid(row=0, column=0, sticky="w")
+        ui_theme.Button(title, text="추천 기준", width=80, command=self._show_scoring_info,
+                       fg_color="transparent", border_width=1, text_color=TEXT_SECONDARY,
+                       hover_color=ui_theme.ACCENT_SOFT).grid(row=0, column=1, padx=(8, 0))
+        self.precise_btn = ui_theme.Button(title, text=f"정밀 추천 (상위 {ps.PRECISE_TOP})", width=140,
+                                         command=self.precise_recommend, state="disabled",
+                                         fg_color=ui_theme.ACCENT_SOFT, text_color=ui_theme.TEXT_PRIMARY,
+                                         hover_color=ui_theme.FOUND_FILL)
+        self.precise_btn.grid(row=0, column=2, sticky="e", padx=(8, 0))
         f = ctk.CTkFrame(parent, fg_color="transparent")
         f.grid(row=2, column=0, sticky="ew", padx=10, pady=(2, 0))
         f.grid_columnconfigure(1, weight=1)
-        ctk.CTkLabel(f, text="표에서 찾기").grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(f, text="회사 찾기", text_color=TEXT_SECONDARY).grid(row=0, column=0, sticky="w")
         self.find_var = tk.StringVar()
         e = ctk.CTkEntry(f, textvariable=self.find_var,
                          placeholder_text="회사명·코드 (쉼표·탭 구분 — 회사가 준 피어 리스트 붙여넣기)")
         e.grid(row=0, column=1, sticky="ew", padx=6)
         e.bind("<KeyRelease>", lambda _e: self._on_find_typed())
-        self.select_found_btn = ctk.CTkButton(f, text="찾은 회사 선택 ☑", width=130, command=self.select_found, state="disabled")
+        self.select_found_btn = ui_theme.Button(f, text="찾은 회사 선택 ☑", width=130, command=self.select_found, state="disabled",
+                                             fg_color=ui_theme.ACCENT_SOFT, text_color=ui_theme.TEXT_PRIMARY, hover_color=ui_theme.FOUND_FILL)
         self.select_found_btn.grid(row=0, column=2, padx=(0, 6))
-        self.add_found_btn = ctk.CTkButton(f, text="후보에 추가", width=90, command=self.add_found, state="disabled")
+        self.add_found_btn = ui_theme.Button(f, text="후보에 추가", width=90, command=self.add_found, state="disabled",
+                                          fg_color=ui_theme.ACCENT_SOFT, text_color=ui_theme.TEXT_PRIMARY, hover_color=ui_theme.FOUND_FILL)
         self.add_found_btn.grid(row=0, column=3)
-        self.find_label = ctk.CTkLabel(f, text="", text_color=TEXT_SECONDARY, anchor="w", justify="left")
+        self.find_label = ctk.CTkLabel(f, text="", text_color=TEXT_SECONDARY, anchor="w", justify="left", wraplength=600)
         self.find_label.grid(row=1, column=0, columnspan=4, sticky="ew")
-        self.count_label = ctk.CTkLabel(f, text="후보 0개", text_color=TEXT_SECONDARY, anchor="w")
+        self.count_label = ctk.CTkLabel(f, text="검색 조건을 입력하고 후보 검색을 눌러주세요.", text_color=TEXT_SECONDARY, anchor="w", wraplength=600, justify="left")
         self.count_label.grid(row=2, column=0, columnspan=4, sticky="ew")
 
     def _on_find_typed(self):
@@ -298,21 +338,17 @@ class CandidatePanel:
         box = ctk.CTkFrame(parent, fg_color=ui_theme.SURFACE, corner_radius=0)
         box.grid(row=3, column=0, sticky="nsew", padx=6, pady=4)
         box.grid_columnconfigure(0, weight=1); box.grid_rowconfigure(0, weight=1)
-        st = ttk.Style()
-        st.configure("Cand.Treeview", font=(ui_theme.FONT_FAMILY, 10), rowheight=26, borderwidth=0,
-                     background=ui_theme.SURFACE, fieldbackground=ui_theme.SURFACE)
-        st.configure("Cand.Treeview.Heading", font=(ui_theme.FONT_FAMILY, 10, "bold"), background=ui_theme.HEADER_FILL,
-                     foreground=ui_theme.HEADER_TEXT, relief="flat", padding=(4, 6))
-        st.map("Cand.Treeview.Heading", background=[("active", ui_theme.HEADER_FILL)])
-        st.map("Cand.Treeview", background=[("selected", ui_theme.SURFACE)], foreground=[("selected", ui_theme.TEXT_PRIMARY)])
+        ui_theme.style_tree("Cand.Treeview")
         self.tree = ttk.Treeview(box, columns=[c[0] for c in self._COLS], show="headings", style="Cand.Treeview", selectmode="none")
+        header_font = tkfont.Font(family=ui_theme.FONT_FAMILY, size=11, weight="bold")
         for key, title, width, anchor in self._COLS:
             self.tree.heading(key, text=title, anchor="center")
-            self.tree.column(key, width=width, minwidth=30, anchor=anchor, stretch=(key in ("industry", "products")))
-        self.tree.tag_configure("odd", background=ui_theme.ROW_STRIPE)
-        self.tree.tag_configure("excluded", foreground=TEXT_SECONDARY)
-        self.tree.tag_configure("rec", background="#FFF3C4")          # 추천 행 연노랑
-        self.tree.tag_configure("found", background="#C6D9F1")        # 찾은 행 하늘색(테마 헤더색)
+            minimum = header_font.measure(title) + 24
+            self.tree.column(key, width=max(width, minimum), minwidth=minimum, anchor=anchor, stretch=(key in ("industry", "products")))
+        self.tree.tag_configure("odd", background=ui_theme.color(ui_theme.ROW_STRIPE))
+        self.tree.tag_configure("excluded", foreground=ui_theme.color(TEXT_SECONDARY))
+        self.tree.tag_configure("rec", background=ui_theme.color(ui_theme.RECOMMENDED_FILL))
+        self.tree.tag_configure("found", background=ui_theme.color(ui_theme.FOUND_FILL))
         vs = ttk.Scrollbar(box, orient="vertical", command=self.tree.yview)
         hs = ttk.Scrollbar(box, orient="horizontal", command=self.tree.xview)
         self.tree.configure(yscrollcommand=vs.set, xscrollcommand=hs.set)
@@ -495,7 +531,17 @@ class CandidatePanel:
         n = len(self.app.candidates)
         extra = f" · 앞 {self.MAX_ROWS}개만 표시" if n > self.MAX_ROWS else ""
         rec = sum(1 for r in self.app.candidates if r.get("recommended"))
-        self.count_label.configure(text=f"후보 {n}개 · ★추천 {rec}개(업종+3 · KSIC+3/+2/+1 · 키워드 제품+2/업종+1 · 제품유사+1(≤3) · 시총유사+2 · 제외어−5 · 신규상장−5 · 정밀: 매출유사+2·흑자+1·적자−1·비적정 제외·D/E>5x−3) · 선택 {len(self.selected_codes())}개{extra}")
+        self.count_label.configure(text=f"후보 {n:,}개   ·   추천 {rec:,}개   ·   선택 {len(self.selected_codes()):,}개{extra}")
+
+    def _show_scoring_info(self):
+        win = ctk.CTkToplevel(self.frame)
+        win.title("후보 추천 기준")
+        win.geometry("590x270")
+        ctk.CTkLabel(win, text="후보 추천 기준", font=ctk.CTkFont(size=18, weight="bold"),
+                     anchor="w").pack(fill="x", padx=24, pady=(20, 12))
+        ctk.CTkLabel(win, text="기본 추천\n업종 +3 · KSIC +3/+2/+1 · 키워드 제품 +2/업종 +1\n제품유사 +1(최대 3) · 시총유사 +2 · 제외어 −5 · 신규상장 −5\n\n정밀 추천\n매출유사 +2 · 흑자 +1 · 적자 −1 · 비적정 제외 · D/E > 5x −3",
+                     anchor="w", justify="left", wraplength=540, text_color=TEXT_SECONDARY).pack(fill="x", padx=24)
+        ui_theme.apply_titlebar_theme(win)
 
     def _refresh_row(self, code):
         st = self.rows_state[code]
@@ -578,12 +624,16 @@ class CandidatePanel:
     def _build_bottom(self, parent):
         f = ctk.CTkFrame(parent, fg_color="transparent")
         f.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
-        ctk.CTkButton(f, text="세션 저장", width=90, command=self.save_session).grid(row=0, column=0, padx=(0, 6))
-        ctk.CTkButton(f, text="세션 열기", width=90, command=self.open_session).grid(row=0, column=1)
-        ctk.CTkButton(f, text="초기화", width=70, command=self.app.reset,
+        ui_theme.Button(f, text="세션 저장", width=90, command=self.save_session,
+                       fg_color=ui_theme.ACCENT_SOFT, text_color=ui_theme.TEXT_PRIMARY,
+                       hover_color=ui_theme.FOUND_FILL).grid(row=0, column=0, padx=(0, 6))
+        ui_theme.Button(f, text="세션 열기", width=90, command=self.open_session,
+                       fg_color=ui_theme.ACCENT_SOFT, text_color=ui_theme.TEXT_PRIMARY,
+                       hover_color=ui_theme.FOUND_FILL).grid(row=0, column=1)
+        ui_theme.Button(f, text="초기화", width=70, command=self.app.reset,
                       fg_color="transparent", border_width=1, text_color=ui_theme.TEXT_PRIMARY).grid(row=0, column=2, padx=(6, 0))
         f.grid_columnconfigure(3, weight=1)
-        ctk.CTkButton(f, text="선택한 피어로 요약 탭 →", width=170, command=self._go_summary).grid(row=0, column=4, sticky="e")
+        ui_theme.Button(f, text="선택 피어 분석 →", width=150, height=34, command=self._go_summary).grid(row=0, column=4, sticky="e")
 
     def _go_summary(self):
         if not self.selected_codes():
